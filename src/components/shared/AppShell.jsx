@@ -3,25 +3,25 @@ import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
 import { useTheme } from "../../contexts/ThemeContext"
 import {
-  LayoutDashboard, Users, BookOpen, ClipboardList, Bell, Settings,
+  LayoutDashboard, Users, BookOpen, ClipboardList, Bell,
   LogOut, Moon, Sun, Menu, X, ChevronDown, Award, MessageSquare,
   BarChart2, FileText, UserPlus, Layers, GraduationCap
 } from "lucide-react"
 import { Button } from "../ui/button"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Badge } from "../ui/badge"
-import { Separator } from "../ui/separator"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from "../ui/dropdown-menu"
 import { ScrollArea } from "../ui/scroll-area"
 import { cn } from "../../lib/utils"
+import CreateAccount from "../../pages/trainer/CreateAccount"
 
 const trainerNav = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/trainer" },
   { label: "Intern Queue", icon: Users, href: "/trainer/interns" },
-  { label: "Create Account", icon: UserPlus, href: "/trainer/create-account" },
+  { label: "Create Account", icon: UserPlus, href: "/trainer/create-account", dialog: true },
   { label: "Cohort Builder", icon: Layers, href: "/trainer/cohorts" },
   { label: "Plan Builder", icon: BookOpen, href: "/trainer/plans" },
   { label: "Review Queue", icon: ClipboardList, href: "/trainer/reviews", badge: true },
@@ -40,16 +40,13 @@ const managementNav = [
   { label: "Program Reports", icon: FileText, href: "/management/reports" },
 ]
 
-const navByRole = {
-  trainer: trainerNav,
-  intern: internNav,
-  management: managementNav,
-}
+const navByRole = { trainer: trainerNav, intern: internNav, management: managementNav }
+const roleLabels = { trainer: "Trainer", intern: "Intern", management: "Management" }
 
-const roleLabels = {
-  trainer: "Trainer",
-  intern: "Intern",
-  management: "Management",
+const roleAccents = {
+  trainer: "from-violet-500 to-indigo-600",
+  intern: "from-sky-500 to-blue-600",
+  management: "from-emerald-500 to-teal-600",
 }
 
 export default function AppShell({ children }) {
@@ -58,6 +55,7 @@ export default function AppShell({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [createAccountOpen, setCreateAccountOpen] = useState(false)
 
   const navItems = navByRole[role] || []
   const initials = userDoc?.name
@@ -69,65 +67,102 @@ export default function AppShell({ children }) {
     navigate("/login")
   }
 
+  const gradient = roleAccents[role] || roleAccents.trainer
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-20 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 w-64 bg-card border-r border-border flex flex-col transition-transform duration-200 lg:relative lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 w-60 flex flex-col transition-transform duration-300 lg:relative lg:translate-x-0",
+        "bg-card border-r border-border",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Logo */}
-        <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+          <div className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg",
+            gradient
+          )}
+            style={{ boxShadow: "0 4px 12px hsl(258 62% 58% / 0.25)" }}
+          >
+            <GraduationCap className="h-5 w-5 text-white" />
           </div>
-          <span className="font-semibold text-lg tracking-tight">وصل Wasel</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm leading-tight">Wasel</p>
+            <p className="text-xs text-muted-foreground leading-tight">وصل</p>
+          </div>
           <button
-            className="ml-auto lg:hidden text-muted-foreground hover:text-foreground"
+            className="lg:hidden rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Role badge */}
-        <div className="px-6 py-3">
-          <Badge variant="secondary" className="text-xs">
-            {roleLabels[role] || "Unknown"}
-          </Badge>
+        {/* User mini-card */}
+        <div className="px-3 pt-3 pb-1">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-primary/6 border border-primary/10">
+            <div className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white text-xs font-bold",
+              gradient
+            )}>
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate leading-tight">{userDoc?.name || user?.email}</p>
+              <p className="text-xs text-muted-foreground capitalize leading-tight">{roleLabels[role] || "User"}</p>
+            </div>
+          </div>
         </div>
 
         {/* Nav */}
-        <ScrollArea className="flex-1 px-3">
-          <nav className="space-y-1 py-2">
+        <ScrollArea className="flex-1 px-3 py-2">
+          <nav className="space-y-0.5">
             {navItems.map((item) => {
               const active = location.pathname === item.href ||
-                (item.href !== "/trainer" && item.href !== "/intern" && item.href !== "/management" &&
+                (!item.dialog && item.href !== "/trainer" && item.href !== "/intern" && item.href !== "/management" &&
                   location.pathname.startsWith(item.href))
+
+              if (item.dialog) {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => { setCreateAccountOpen(true); setSidebarOpen(false) }}
+                    className={cn(
+                      "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                      "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </button>
+                )
+              }
+
               return (
                 <Link
                   key={item.href}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                     active
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground"
                   )}
                 >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {item.label}
+                  <item.icon className={cn("h-4 w-4 shrink-0", active && "text-primary")} />
+                  <span className="flex-1">{item.label}</span>
                   {item.badge && (
-                    <Badge className="ml-auto h-5 px-1.5 text-xs" variant="destructive">3</Badge>
+                    <Badge className="h-5 px-1.5 text-xs" variant="destructive">3</Badge>
                   )}
                 </Link>
               )
@@ -136,34 +171,32 @@ export default function AppShell({ children }) {
         </ScrollArea>
 
         {/* Bottom */}
-        <div className="border-t border-border p-3 space-y-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground"
+        <div className="border-t border-border p-3 space-y-0.5">
+          <button
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
             onClick={toggleTheme}
           >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark"
+              ? <Sun className="h-4 w-4 shrink-0" />
+              : <Moon className="h-4 w-4 shrink-0" />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+          </button>
+          <button
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive transition-all"
             onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 shrink-0" />
             Sign out
-          </Button>
+          </button>
         </div>
       </aside>
 
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex h-14 items-center gap-4 border-b border-border bg-card px-4 shrink-0">
+        <header className="flex h-14 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-sm px-4 shrink-0">
           <button
-            className="lg:hidden text-muted-foreground hover:text-foreground"
+            className="lg:hidden rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
@@ -173,30 +206,31 @@ export default function AppShell({ children }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+              <Button variant="ghost" size="sm" className="gap-2 rounded-xl h-9 px-2.5">
+                <div className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br text-white text-xs font-bold",
+                  gradient
+                )}>
+                  {initials}
+                </div>
                 <span className="hidden sm:inline text-sm font-medium">
                   {userDoc?.name || user?.email}
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">{userDoc?.name || "User"}</p>
+            <DropdownMenuContent align="end" className="w-52 rounded-xl">
+              <DropdownMenuLabel className="font-normal px-3 py-2">
+                <p className="text-sm font-semibold">{userDoc?.name || "User"}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={toggleTheme}>
+              <DropdownMenuItem onClick={toggleTheme} className="rounded-lg">
                 {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
                 Toggle theme
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive rounded-lg focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
@@ -209,6 +243,14 @@ export default function AppShell({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Create Account Dialog (trainer only) */}
+      {role === "trainer" && (
+        <CreateAccount
+          open={createAccountOpen}
+          onOpenChange={setCreateAccountOpen}
+        />
+      )}
     </div>
   )
 }

@@ -13,6 +13,7 @@ import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
 import { Avatar, AvatarFallback } from "../../components/ui/avatar"
 import { Separator } from "../../components/ui/separator"
+import { Checkbox } from "../../components/ui/checkbox"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "../../components/ui/dialog"
@@ -446,11 +447,9 @@ export default function CohortBuilder() {
                         key={intern.id}
                         className="flex items-center gap-3 px-3 py-2 hover:bg-accent cursor-pointer"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={sel}
-                          onChange={() => toggleMember(intern.id)}
-                          className="h-4 w-4 accent-primary"
+                          onCheckedChange={() => toggleMember(intern.id)}
                         />
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs bg-primary/10 text-primary">

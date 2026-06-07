@@ -7,7 +7,6 @@ import Login from "./pages/Login"
 
 // Trainer pages
 import TrainerDashboard from "./pages/trainer/Dashboard"
-import CreateAccount from "./pages/trainer/CreateAccount"
 import InternQueue from "./pages/trainer/InternQueue"
 import InternDetail from "./pages/trainer/InternDetail"
 import CohortBuilder from "./pages/trainer/CohortBuilder"
@@ -73,7 +72,7 @@ export default function App() {
 
             {/* Trainer routes */}
             <Route path="/trainer" element={<TrainerLayout><TrainerDashboard /></TrainerLayout>} />
-            <Route path="/trainer/create-account" element={<TrainerLayout><CreateAccount /></TrainerLayout>} />
+            <Route path="/trainer/create-account" element={<Navigate to="/trainer" replace />} />
             <Route path="/trainer/interns" element={<TrainerLayout><InternQueue /></TrainerLayout>} />
             <Route path="/trainer/interns/:uid" element={<TrainerLayout><InternDetail /></TrainerLayout>} />
             <Route path="/trainer/cohorts" element={<TrainerLayout><CohortBuilder /></TrainerLayout>} />

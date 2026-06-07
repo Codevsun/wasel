@@ -19,6 +19,7 @@ import {
 } from "../../components/ui/dialog"
 import { Label } from "../../components/ui/label"
 import { Separator } from "../../components/ui/separator"
+import { Checkbox } from "../../components/ui/checkbox"
 import {
   Users, Search, AlertTriangle, ChevronRight, Filter, UserCheck, Trash2,
 } from "lucide-react"
@@ -327,12 +328,9 @@ export default function InternQueue() {
                       selected.has(intern.id) ? "bg-primary/5 border border-primary/20" : "hover:bg-accent"
                     )}
                   >
-                    {/* Checkbox */}
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                    <Checkbox
                       checked={selected.has(intern.id)}
-                      onChange={() => toggleSelect(intern.id)}
+                      onCheckedChange={() => toggleSelect(intern.id)}
                       onClick={(e) => e.stopPropagation()}
                     />
 
