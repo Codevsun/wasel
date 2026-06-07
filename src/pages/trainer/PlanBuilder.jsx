@@ -86,6 +86,10 @@ export default function PlanBuilder() {
 
   const [saving, setSaving] = useState(false)
 
+  // Delete plan
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "plans"), (snap) => {
       setPlans(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
@@ -272,6 +276,44 @@ export default function PlanBuilder() {
     }
   }
 
+  const handleDeletePlan = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const tSnap = await getDocs(query(collection(db, "tracks"), where("plan_id", "==", deleteTarget.id)))
+      const trackIds = tSnap.docs.map((d) => d.id)
+
+      const moduleIds = []
+      for (const trackId of trackIds) {
+        const mSnap = await getDocs(query(collection(db, "modules"), where("track_id", "==", trackId)))
+        mSnap.docs.forEach((d) => moduleIds.push(d.id))
+        await deleteDoc(doc(db, "tracks", trackId))
+      }
+
+      const milestoneIds = []
+      for (const modId of moduleIds) {
+        const msSnap = await getDocs(query(collection(db, "milestones"), where("module_id", "==", modId)))
+        msSnap.docs.forEach((d) => milestoneIds.push(d.id))
+        await deleteDoc(doc(db, "modules", modId))
+      }
+
+      for (const msId of milestoneIds) {
+        const tskSnap = await getDocs(query(collection(db, "tasks"), where("milestone_id", "==", msId)))
+        await Promise.all(tskSnap.docs.map((d) => deleteDoc(doc(db, "tasks", d.id))))
+        await deleteDoc(doc(db, "milestones", msId))
+      }
+
+      await deleteDoc(doc(db, "plans", deleteTarget.id))
+      setDeleteTarget(null)
+      if (expandedPlan === deleteTarget.id) setExpandedPlan(null)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to delete plan: " + err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const handleAddTask = async () => {
     if (!taskForm.title.trim()) return
     setSaving(true)
@@ -372,6 +414,14 @@ export default function PlanBuilder() {
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleClonePlan(plan)} disabled={saving}>
                         <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeleteTarget(plan)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                     {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
@@ -617,6 +667,26 @@ export default function PlanBuilder() {
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
             <Button onClick={handleAddMilestone} disabled={!milestoneForm.title.trim() || saving}>
               {saving ? "Adding..." : "Add Milestone"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Plan Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Plan</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-medium">{deleteTarget?.name}</span>? All tracks, modules, milestones, and tasks inside it will also be deleted. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDeletePlan} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete Plan"}
             </Button>
           </DialogFooter>
         </DialogContent>

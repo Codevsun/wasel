@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   collection, onSnapshot, getDocs, query, where,
-  doc, updateDoc, arrayUnion,
+  doc, updateDoc, arrayUnion, deleteDoc,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
@@ -20,7 +20,7 @@ import {
 import { Label } from "../../components/ui/label"
 import { Separator } from "../../components/ui/separator"
 import {
-  Users, Search, AlertTriangle, ChevronRight, Filter, UserCheck,
+  Users, Search, AlertTriangle, ChevronRight, Filter, UserCheck, Trash2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -48,6 +48,10 @@ export default function InternQueue() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterCohort, setFilterCohort] = useState("all")
   const [filterTrack, setFilterTrack] = useState("all")
+
+  // Delete
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Bulk assign
   const [selected, setSelected] = useState(new Set())
@@ -153,6 +157,21 @@ export default function InternQueue() {
       alert("Failed to assign interns: " + err.message)
     } finally {
       setAssigning(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteDoc(doc(db, "users", deleteTarget.id))
+      setDeleteTarget(null)
+      setSelected((prev) => { const next = new Set(prev); next.delete(deleteTarget.id); return next })
+    } catch (err) {
+      console.error(err)
+      alert("Failed to delete intern: " + err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -385,6 +404,12 @@ export default function InternQueue() {
                     </div>
 
                     <button
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(intern) }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button
                       className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => navigate(`/trainer/interns/${intern.id}`)}
                     >
@@ -397,6 +422,26 @@ export default function InternQueue() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Intern</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-medium">{deleteTarget?.name}</span>? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Assign Dialog */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>

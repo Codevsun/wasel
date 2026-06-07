@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import {
   collection, onSnapshot, addDoc, doc, getDocs,
-  updateDoc, arrayUnion, query, where, serverTimestamp,
+  updateDoc, arrayUnion, arrayRemove, query, where, serverTimestamp, deleteDoc,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
@@ -21,7 +21,7 @@ import {
 } from "../../components/ui/select"
 import {
   Layers, Plus, Users, ChevronDown, ChevronRight, CalendarDays,
-  BookOpen, FolderOpen,
+  BookOpen, FolderOpen, Trash2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -57,6 +57,10 @@ export default function CohortBuilder() {
     member_uids: [],
   })
   const [creating, setCreating] = useState(false)
+
+  // Delete cohort
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Add group inside program cohort
   const [addGroupOpen, setAddGroupOpen] = useState(false)
@@ -143,6 +147,27 @@ export default function CohortBuilder() {
     }
   }
 
+  const handleDeleteCohort = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const memberUids = deleteTarget.member_uids || []
+      await Promise.all(
+        memberUids.map((uid) =>
+          updateDoc(doc(db, "users", uid), { cohort_ids: arrayRemove(deleteTarget.id) })
+        )
+      )
+      await deleteDoc(doc(db, "cohorts", deleteTarget.id))
+      setDeleteTarget(null)
+      setExpanded((prev) => { const next = new Set(prev); next.delete(deleteTarget.id); return next })
+    } catch (err) {
+      console.error(err)
+      alert("Failed to delete cohort: " + err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const handleAddGroup = async () => {
     if (!groupName.trim() || !addGroupCohort) return
     setAddingGroup(true)
@@ -220,45 +245,53 @@ export default function CohortBuilder() {
 
             return (
               <Card key={cohort.id} className="overflow-hidden">
-                <button
-                  className="w-full text-left"
-                  onClick={() => toggleExpand(cohort.id)}
-                >
-                  <CardHeader className="flex flex-row items-center gap-4 py-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{cohort.name}</span>
-                        <Badge variant={TYPE_COLORS[cohort.type] || "outline"} className="text-xs capitalize">
-                          {cohort.type}
-                        </Badge>
-                        {plan && (
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            {plan.name}
+                <div className="flex items-center">
+                  <button
+                    className="flex-1 text-left"
+                    onClick={() => toggleExpand(cohort.id)}
+                  >
+                    <CardHeader className="flex flex-row items-center gap-4 py-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{cohort.name}</span>
+                          <Badge variant={TYPE_COLORS[cohort.type] || "outline"} className="text-xs capitalize">
+                            {cohort.type}
                           </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {memberCount} member{memberCount !== 1 ? "s" : ""}
-                        </span>
-                        {cohort.start_date && (
+                          {plan && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <BookOpen className="h-3 w-3" />
+                              {plan.name}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            Started {formatDate(cohort.start_date)}
+                            <Users className="h-3.5 w-3.5" />
+                            {memberCount} member{memberCount !== 1 ? "s" : ""}
                           </span>
-                        )}
-                        {avgProgress !== null && (
-                          <span>Avg. {Math.round(avgProgress)}% complete</span>
-                        )}
+                          {cohort.start_date && (
+                            <span className="flex items-center gap-1">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              Started {formatDate(cohort.start_date)}
+                            </span>
+                          )}
+                          {avgProgress !== null && (
+                            <span>Avg. {Math.round(avgProgress)}% complete</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {isOpen
-                      ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                      : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                  </CardHeader>
-                </button>
+                      {isOpen
+                        ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                        : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    </CardHeader>
+                  </button>
+                  <button
+                    className="p-4 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                    onClick={() => setDeleteTarget(cohort)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
 
                 {isOpen && (
                   <CardContent className="pt-0 pb-4 space-y-4">
@@ -441,6 +474,26 @@ export default function CohortBuilder() {
             </DialogClose>
             <Button onClick={handleCreate} disabled={!form.name.trim() || creating}>
               {creating ? "Creating..." : "Create Cohort"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Cohort Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Cohort</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-medium">{deleteTarget?.name}</span>? Members will be unlinked from this cohort. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDeleteCohort} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete Cohort"}
             </Button>
           </DialogFooter>
         </DialogContent>
