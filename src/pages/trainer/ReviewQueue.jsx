@@ -4,6 +4,7 @@ import {
   collection, onSnapshot, query, where, orderBy, getDocs,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
+import { AWAITING_REVIEW_STATUSES } from "../../lib/submissions"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -14,7 +15,7 @@ import {
 } from "../../components/ui/select"
 import {
   ClipboardList, Search, ChevronRight, FileText, FlaskConical,
-  HelpCircle, Upload, ChevronDown,
+  HelpCircle, Upload, ChevronDown, Link2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -37,6 +38,8 @@ const TYPE_ICON = {
   lab: FlaskConical,
   quiz: HelpCircle,
   submission: Upload,
+  link: Link2,
+  text: FileText,
 }
 
 const TYPE_BADGE_VARIANT = {
@@ -65,7 +68,7 @@ export default function ReviewQueue() {
   useEffect(() => {
     const subQ = query(
       collection(db, "submissions"),
-      where("status", "==", "pending"),
+      where("status", "in", AWAITING_REVIEW_STATUSES),
       orderBy("submitted_at", "desc")
     )
 
@@ -110,7 +113,10 @@ export default function ReviewQueue() {
       const taskMatch = taskMap[sub.task_id]?.title?.toLowerCase().includes(s)
       if (!nameMatch && !taskMatch) return false
     }
-    if (filterType !== "all" && sub.type !== filterType) return false
+    if (filterType !== "all") {
+      const taskType = taskMap[sub.task_id]?.type
+      if (taskType !== filterType && sub.type !== filterType) return false
+    }
     if (filterDate) {
       const subDate = sub.submitted_at?.toDate
         ? sub.submitted_at.toDate().toISOString().slice(0, 10)
@@ -271,7 +277,8 @@ export default function ReviewQueue() {
                       const intern = internMap[sub.user_id]
                       const task = taskMap[sub.task_id]
                       const initials = intern?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"
-                      const TypeIcon = TYPE_ICON[sub.type] || FileText
+                      const taskType = task?.type
+                      const TypeIcon = TYPE_ICON[taskType] || TYPE_ICON[sub.type] || FileText
 
                       return (
                         <button
@@ -298,9 +305,9 @@ export default function ReviewQueue() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant={TYPE_BADGE_VARIANT[sub.type] || "outline"} className="text-xs capitalize gap-1">
+                            <Badge variant={TYPE_BADGE_VARIANT[taskType] || TYPE_BADGE_VARIANT[sub.type] || "outline"} className="text-xs capitalize gap-1">
                               <TypeIcon className="h-3 w-3" />
-                              {sub.type || "submission"}
+                              {taskType || sub.type || "submission"}
                             </Badge>
                             <span className="text-xs text-muted-foreground hidden sm:inline">
                               {timeAgo(sub.submitted_at)}

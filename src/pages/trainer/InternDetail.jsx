@@ -51,9 +51,11 @@ function formatDate(ts) {
 
 const statusVariant = {
   approved: "success",
+  passed: "success",
   rejected: "destructive",
+  failed: "destructive",
   pending: "warning",
-  submitted: "secondary",
+  submitted: "warning",
 }
 
 const EXPECTED_PCT = 40
@@ -67,6 +69,7 @@ export default function InternDetail() {
   const [progress, setProgress] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [quizResults, setQuizResults] = useState([])
+  const [quizTaskLabels, setQuizTaskLabels] = useState({})
   const [cohortMap, setCohortMap] = useState({})
   const [groupMap, setGroupMap] = useState({})
   const [note, setNote] = useState("")
@@ -105,7 +108,7 @@ export default function InternDetail() {
       }, console.error)
     )
 
-    // Submissions
+    // Submissions (project/link tasks — quizzes live in quiz_results)
     const subQ = query(
       collection(db, "submissions"),
       where("user_id", "==", uid),
@@ -113,9 +116,19 @@ export default function InternDetail() {
     )
     unsubs.push(
       onSnapshot(subQ, (snap) => {
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        setSubmissions(all.filter((s) => s.type !== "quiz"))
-        setQuizResults(all.filter((s) => s.type === "quiz"))
+        setSubmissions(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      }, console.error)
+    )
+
+    // Quiz attempts
+    const quizQ = query(
+      collection(db, "quiz_results"),
+      where("user_id", "==", uid),
+      orderBy("taken_at", "desc")
+    )
+    unsubs.push(
+      onSnapshot(quizQ, (snap) => {
+        setQuizResults(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       }, console.error)
     )
 
@@ -141,6 +154,23 @@ export default function InternDetail() {
     loadTrackLabels(progress.plan_id).then(setTrackLabels).catch(console.error)
     loadMilestoneLabels(progress.plan_id).then(setMilestoneLabels).catch(console.error)
   }, [progress?.plan_id])
+
+  useEffect(() => {
+    const taskIds = [...new Set(quizResults.map((q) => q.task_id).filter(Boolean))]
+    if (!taskIds.length) {
+      setQuizTaskLabels({})
+      return
+    }
+    Promise.all(taskIds.map((id) => getDoc(doc(db, "tasks", id))))
+      .then((snaps) => {
+        const map = {}
+        snaps.forEach((s) => {
+          if (s.exists()) map[s.id] = s.data().title || "Quiz"
+        })
+        setQuizTaskLabels(map)
+      })
+      .catch(console.error)
+  }, [quizResults])
 
   const handleSaveNote = async () => {
     setSavingNote(true)
@@ -441,6 +471,7 @@ export default function InternDetail() {
                     const scoreColor =
                       quiz.score >= 80 ? "text-green-600" :
                       quiz.score >= 60 ? "text-amber-600" : "text-red-600"
+                    const status = quiz.passed ? "passed" : "failed"
                     return (
                       <div
                         key={quiz.id}
@@ -448,8 +479,12 @@ export default function InternDetail() {
                       >
                         <BarChart2 className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">Quiz Attempt</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(quiz.submitted_at)}</p>
+                          <p className="text-sm font-medium truncate">
+                            {quizTaskLabels[quiz.task_id] || "Quiz"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Attempt {quiz.attempt ?? 1} · {formatDate(quiz.taken_at)}
+                          </p>
                         </div>
                         {quiz.score !== undefined && quiz.score !== null ? (
                           <span className={cn("text-lg font-bold", scoreColor)}>
@@ -459,10 +494,10 @@ export default function InternDetail() {
                           <Badge variant="outline" className="text-xs">Not scored</Badge>
                         )}
                         <Badge
-                          variant={statusVariant[quiz.status] || "outline"}
+                          variant={statusVariant[status] || "outline"}
                           className="text-xs capitalize shrink-0"
                         >
-                          {quiz.status || "pending"}
+                          {status}
                         </Badge>
                       </div>
                     )

@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { ensureProgressDoc } from "../../lib/progress"
+import { syncProgressWithCohort } from "../../lib/progress"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
@@ -110,7 +110,7 @@ export default function MyPlan() {
         const cohortId = userDoc.cohort_ids?.[0]
         if (!cohortId) throw new Error("No cohort assigned.")
 
-        await ensureProgressDoc(user.uid, cohortId)
+        await syncProgressWithCohort(user.uid, cohortId)
 
         const cohortSnap = await getDoc(doc(db, "cohorts", cohortId))
         if (!cohortSnap.exists()) throw new Error("Cohort not found.")

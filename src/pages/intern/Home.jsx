@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { ensureProgressDoc, loadTrackLabels } from "../../lib/progress"
+import { syncProgressWithCohort, loadTrackLabels } from "../../lib/progress"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Progress } from "../../components/ui/progress"
 import { Badge } from "../../components/ui/badge"
@@ -50,10 +50,10 @@ export default function InternHome() {
 
   const [trackLabels, setTrackLabels] = useState({})
 
-  // Initialize progress doc if missing (trainers read progress/{uid})
+  // Keep progress in sync with the intern's current cohort plan
   useEffect(() => {
     if (!user?.uid || !userDoc?.cohort_ids?.[0]) return
-    ensureProgressDoc(user.uid, userDoc.cohort_ids[0]).catch(console.error)
+    syncProgressWithCohort(user.uid, userDoc.cohort_ids[0]).catch(console.error)
   }, [user?.uid, userDoc?.cohort_ids])
 
   // Real-time progress listener
@@ -166,6 +166,14 @@ export default function InternHome() {
   const trackPct = progressDoc?.track_pct ?? {}
   const completedCount = (progressDoc?.completed_tasks ?? []).length
 
+  const trackEntries = Object.entries(trackPct)
+  const currentTrackLabel = (() => {
+    if (trackEntries.length === 0) return "—"
+    const activeId =
+      trackEntries.find(([, pct]) => pct < 100)?.[0] ?? trackEntries[0][0]
+    return trackLabels[activeId] || "Track"
+  })()
+
   const taskTypeBadge = (type) => {
     const map = {
       reading: { label: "Reading", variant: "secondary" },
@@ -212,7 +220,7 @@ export default function InternHome() {
         {[
           { label: "Tasks Completed", value: completedCount, icon: CheckCircle2, color: "text-green-500" },
           { label: "Overall Progress", value: `${Math.round(overallPct)}%`, icon: TrendingUp, color: "text-primary" },
-          { label: "Active Track", value: Object.keys(trackPct).length || "—", icon: BookOpen, color: "text-blue-500" },
+          { label: "Current Track", value: currentTrackLabel, icon: BookOpen, color: "text-blue-500" },
           { label: "Streak", value: "Active", icon: Zap, color: "text-yellow-500" },
         ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label}>

@@ -191,7 +191,8 @@ export default function ReviewPage() {
   }
 
   const initials = intern?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?"
-  const alreadyReviewed = submission.status === "approved" || submission.status === "rejected"
+  const alreadyReviewed =
+    submission.status === "approved" || submission.status === "rejected"
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">

@@ -4,6 +4,7 @@ import {
   collection, onSnapshot, query, where, orderBy, limit,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
+import { AWAITING_REVIEW_STATUSES } from "../../lib/submissions"
 import { useAuth } from "../../contexts/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
@@ -90,7 +91,7 @@ export default function TrainerDashboard() {
     // Pending submissions
     const subQ = query(
       collection(db, "submissions"),
-      where("status", "==", "pending"),
+      where("status", "in", AWAITING_REVIEW_STATUSES),
       orderBy("submitted_at", "desc"),
       limit(20)
     )

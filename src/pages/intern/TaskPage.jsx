@@ -160,7 +160,7 @@ export default function TaskPage() {
         type: "link",
         link: linkValue.trim(),
         submitted_at: serverTimestamp(),
-        status: "submitted",
+        status: "pending",
         trainer_feedback: null,
         version: 1,
       })
@@ -196,7 +196,7 @@ export default function TaskPage() {
         content: textValue.trim() || null,
         link: linkValue.trim() || null,
         submitted_at: serverTimestamp(),
-        status: "submitted",
+        status: "pending",
         trainer_feedback: null,
         version,
       })
