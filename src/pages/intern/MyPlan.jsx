@@ -5,6 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { ensureProgressDoc } from "../../lib/progress"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
@@ -34,7 +35,7 @@ function taskTypeVariant(type) {
 
 function TaskStatusIndicator({ status, locked }) {
   if (locked) return <Lock className="h-4 w-4 text-muted-foreground/50" />
-  if (status === "passed") return <CheckCircle2 className="h-4 w-4 text-green-500" />
+  if (status === "passed" || status === "approved") return <CheckCircle2 className="h-4 w-4 text-green-500" />
   if (status === "in_progress" || status === "submitted" || status === "reviewed")
     return <Clock className="h-4 w-4 text-yellow-500" />
   if (status === "failed") return <div className="h-4 w-4 rounded-full bg-destructive/80" />
@@ -100,7 +101,7 @@ export default function MyPlan() {
 
   // Load plan structure
   useEffect(() => {
-    if (!userDoc) return
+    if (!userDoc || !user?.uid) return
     async function load() {
       setLoading(true)
       setError(null)
@@ -108,6 +109,8 @@ export default function MyPlan() {
         // cohort → plan
         const cohortId = userDoc.cohort_ids?.[0]
         if (!cohortId) throw new Error("No cohort assigned.")
+
+        await ensureProgressDoc(user.uid, cohortId)
 
         const cohortSnap = await getDoc(doc(db, "cohorts", cohortId))
         if (!cohortSnap.exists()) throw new Error("Cohort not found.")

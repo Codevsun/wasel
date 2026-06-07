@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { markTaskCompleted } from "../../lib/progress"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
@@ -31,21 +32,6 @@ async function upsertOutcome(uid, taskId, patch) {
     })
   } else {
     return updateDoc(snap.docs[0].ref, patch)
-  }
-}
-
-async function updateProgressCompleted(uid, taskId) {
-  const progRef = doc(db, "progress", uid)
-  const progSnap = await getDoc(progRef)
-  if (progSnap.exists()) {
-    const data = progSnap.data()
-    const completed = Array.from(new Set([...(data.completed_tasks || []), taskId]))
-    const totalTasks = data.total_tasks || 1
-    await updateDoc(progRef, {
-      completed_tasks: completed,
-      overall_pct: Math.min(100, Math.round((completed.length / totalTasks) * 100)),
-      last_active: serverTimestamp(),
-    })
   }
 }
 
@@ -162,7 +148,7 @@ function ResultScreen({ quiz, answers, score, passed, attempt, onRetry, onBack }
 
 export default function QuizPage() {
   const { taskId } = useParams()
-  const { user } = useAuth()
+  const { user, userDoc } = useAuth()
   const navigate = useNavigate()
 
   const [quiz, setQuiz] = useState(null)
@@ -238,7 +224,9 @@ export default function QuizPage() {
 
       // Update progress if passed
       if (passed) {
-        await updateProgressCompleted(user.uid, taskId)
+        await markTaskCompleted(user.uid, taskId, {
+          cohortId: userDoc?.cohort_ids?.[0],
+        })
       }
 
       setResult({ score, passed, attempt })

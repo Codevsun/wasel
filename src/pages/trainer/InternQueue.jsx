@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
-const TRACK_OPTIONS = ["frontend", "backend", "fullstack", "devops", "ai", "cloud", "security"]
+const TRACK_OPTIONS = ["frontend", "backend", "fullstack", "devops", "git", "ai", "cloud", "security"]
 const STATUS_OPTIONS = ["active", "inactive", "graduated", "withdrawn"]
 
 const EXPECTED_PCT = 40 // simplistic fallback

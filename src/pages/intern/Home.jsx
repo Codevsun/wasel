@@ -5,6 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { ensureProgressDoc, loadTrackLabels } from "../../lib/progress"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Progress } from "../../components/ui/progress"
 import { Badge } from "../../components/ui/badge"
@@ -28,7 +29,7 @@ function SkeletonCard() {
 }
 
 function TaskStatusIcon({ status }) {
-  if (status === "passed") return <CheckCircle2 className="h-4 w-4 text-green-500" />
+  if (status === "passed" || status === "approved") return <CheckCircle2 className="h-4 w-4 text-green-500" />
   if (status === "in_progress") return <Clock className="h-4 w-4 text-yellow-500" />
   return <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />
 }
@@ -47,6 +48,14 @@ export default function InternHome() {
   const [announcements, setAnnouncements] = useState([])
   const [announcementsLoading, setAnnouncementsLoading] = useState(true)
 
+  const [trackLabels, setTrackLabels] = useState({})
+
+  // Initialize progress doc if missing (trainers read progress/{uid})
+  useEffect(() => {
+    if (!user?.uid || !userDoc?.cohort_ids?.[0]) return
+    ensureProgressDoc(user.uid, userDoc.cohort_ids[0]).catch(console.error)
+  }, [user?.uid, userDoc?.cohort_ids])
+
   // Real-time progress listener
   useEffect(() => {
     if (!user?.uid) return
@@ -56,6 +65,11 @@ export default function InternHome() {
     })
     return unsub
   }, [user?.uid])
+
+  useEffect(() => {
+    if (!progressDoc?.plan_id) return
+    loadTrackLabels(progressDoc.plan_id).then(setTrackLabels).catch(console.error)
+  }, [progressDoc?.plan_id])
 
   // Load current milestone tasks (not_started or in_progress)
   useEffect(() => {
@@ -289,7 +303,9 @@ export default function InternHome() {
                 Object.entries(trackPct).map(([trackId, pct]) => (
                   <div key={trackId} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium capitalize text-xs text-muted-foreground">{trackId}</span>
+                      <span className="font-medium text-xs text-muted-foreground">
+                        {trackLabels[trackId] || "Track"}
+                      </span>
                       <span className="font-semibold">{Math.round(pct)}%</span>
                     </div>
                     <Progress value={pct} className="h-2" />

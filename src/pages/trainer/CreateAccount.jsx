@@ -25,6 +25,7 @@ const TRACK_OPTIONS = [
   { value: "backend", label: "Backend" },
   { value: "fullstack", label: "Fullstack" },
   { value: "devops", label: "DevOps" },
+  { value: "git", label: "Git & GitHub" },
   { value: "ai", label: "AI / ML" },
   { value: "cloud", label: "Cloud" },
   { value: "security", label: "Security" },

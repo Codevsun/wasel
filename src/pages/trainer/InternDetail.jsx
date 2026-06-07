@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { loadTrackLabels, loadMilestoneLabels } from "../../lib/progress"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
@@ -79,6 +80,8 @@ export default function InternDetail() {
   const [newCohort, setNewCohort] = useState("")
   const [newGroup, setNewGroup] = useState("")
   const [reassigning, setReassigning] = useState(false)
+  const [trackLabels, setTrackLabels] = useState({})
+  const [milestoneLabels, setMilestoneLabels] = useState({})
 
   useEffect(() => {
     const unsubs = []
@@ -132,6 +135,12 @@ export default function InternDetail() {
 
     return () => unsubs.forEach((u) => u())
   }, [uid])
+
+  useEffect(() => {
+    if (!progress?.plan_id) return
+    loadTrackLabels(progress.plan_id).then(setTrackLabels).catch(console.error)
+    loadMilestoneLabels(progress.plan_id).then(setMilestoneLabels).catch(console.error)
+  }, [progress?.plan_id])
 
   const handleSaveNote = async () => {
     setSavingNote(true)
@@ -314,7 +323,7 @@ export default function InternDetail() {
                 {Object.entries(trackPct).map(([trackId, pct]) => (
                   <div key={trackId}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium capitalize">{trackId}</span>
+                      <span className="font-medium">{trackLabels[trackId] || "Track"}</span>
                       <span className="text-muted-foreground">{Math.round(pct)}%</span>
                     </div>
                     <Progress value={pct} className="h-2" />
@@ -332,7 +341,11 @@ export default function InternDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {Object.entries(progress.milestone_status).map(([milestoneId, status]) => (
+                  {Object.entries(progress.milestone_status)
+                    .sort(([a], [b]) =>
+                      (milestoneLabels[a]?.week_number ?? 0) - (milestoneLabels[b]?.week_number ?? 0)
+                    )
+                    .map(([milestoneId, status]) => (
                     <div key={milestoneId} className="flex items-center gap-3">
                       {status === "completed" ? (
                         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
@@ -341,8 +354,8 @@ export default function InternDetail() {
                       ) : (
                         <div className="h-4 w-4 rounded-full border-2 border-muted shrink-0" />
                       )}
-                      <span className="text-sm capitalize">
-                        Milestone {milestoneId.slice(-4)}
+                      <span className="text-sm">
+                        {milestoneLabels[milestoneId]?.title ?? "Milestone"}
                       </span>
                       <Badge
                         variant={

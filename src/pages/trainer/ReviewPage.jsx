@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { markTaskCompleted } from "../../lib/progress"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
@@ -120,6 +121,7 @@ export default function ReviewPage() {
     setSubmitting(true)
     try {
       const now = serverTimestamp()
+      const outcomeStatus = status === "approved" ? "passed" : "failed"
 
       // Update submission
       await updateDoc(doc(db, "submissions", submissionId), {
@@ -130,7 +132,7 @@ export default function ReviewPage() {
       // Update or create outcome
       if (outcome?.id) {
         await updateDoc(doc(db, "outcomes", outcome.id), {
-          status,
+          status: outcomeStatus,
           feedback,
           reviewed_by: user?.uid,
           reviewed_at: now,
@@ -139,11 +141,17 @@ export default function ReviewPage() {
         await addDoc(collection(db, "outcomes"), {
           task_id: submission.task_id,
           user_id: submission.user_id,
-          status,
+          status: outcomeStatus,
           feedback,
           reviewed_by: user?.uid,
           reviewed_at: now,
           submitted_at: submission.submitted_at,
+        })
+      }
+
+      if (status === "approved" && submission.task_id && submission.user_id) {
+        await markTaskCompleted(submission.user_id, submission.task_id, {
+          cohortId: intern?.cohort_ids?.[0],
         })
       }
 
