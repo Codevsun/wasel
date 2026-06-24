@@ -13,13 +13,9 @@ import { Badge } from "../../components/ui/badge"
 import { Textarea } from "../../components/ui/textarea"
 import { Label } from "../../components/ui/label"
 import { Avatar, AvatarFallback } from "../../components/ui/avatar"
-import { Separator } from "../../components/ui/separator"
-import {
-  Tabs, TabsList, TabsTrigger, TabsContent,
-} from "../../components/ui/tabs"
 import {
   ArrowLeft, CheckCircle2, XCircle, Link2, FileText, Download,
-  Clock, User, BookOpen, AlertTriangle, History,
+  User, BookOpen, AlertTriangle, History,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -332,10 +328,11 @@ export default function ReviewPage() {
               <CardContent>
                 <div className="space-y-2">
                   {allVersions.map((v) => (
-                    <button
+                    <Button
                       key={v.id}
+                      variant="ghost"
                       className={cn(
-                        "w-full flex items-center gap-3 p-2.5 rounded-md border transition-colors text-left",
+                        "w-full flex items-center gap-3 p-2.5 rounded-md border transition-colors text-left justify-start h-auto",
                         v.id === submissionId
                           ? "border-primary/30 bg-primary/5"
                           : "border-border hover:bg-accent"
@@ -364,7 +361,7 @@ export default function ReviewPage() {
                       >
                         {v.status || "pending"}
                       </Badge>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </CardContent>

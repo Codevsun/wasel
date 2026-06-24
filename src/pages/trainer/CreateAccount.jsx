@@ -17,7 +17,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "../../components/ui/dialog"
-import { UserPlus, Copy, CheckCheck, AlertCircle, Sparkles } from "lucide-react"
+import { UserPlus, Copy, CheckCheck, AlertCircle } from "lucide-react"
 import { cn } from "../../lib/utils"
 
 const TRACK_OPTIONS = [
@@ -184,15 +184,17 @@ export default function CreateAccount({ open, onOpenChange }) {
                   <span className="text-muted-foreground">Password</span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-semibold tracking-wide">{success.password}</span>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => copyPassword(success.password)}
-                      className="rounded-md p-1 hover:bg-accent transition-colors"
+                      className="rounded-md h-6 w-6 hover:bg-accent transition-colors"
                     >
                       {copied
                         ? <CheckCheck className="h-3.5 w-3.5 text-green-500" />
                         : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -265,13 +267,15 @@ export default function CreateAccount({ open, onOpenChange }) {
                     className="font-mono flex-1"
                     required
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => copyPassword(form.password)}
                     className="flex items-center justify-center rounded-lg border border-input bg-background px-3 hover:bg-accent transition-colors"
                   >
                     {copied ? <CheckCheck className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
-                  </button>
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -306,19 +310,20 @@ export default function CreateAccount({ open, onOpenChange }) {
                     {TRACK_OPTIONS.map((t) => {
                       const sel = form.track_preference.includes(t.value)
                       return (
-                        <button
+                        <Button
                           key={t.value}
                           type="button"
+                          variant="ghost"
                           onClick={() => toggleTrack(t.value)}
                           className={cn(
-                            "rounded-full border px-3 py-1 text-xs font-medium transition-all cursor-pointer",
+                            "rounded-full border px-3 py-1 h-auto text-xs font-medium transition-all cursor-pointer",
                             sel
-                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary hover:text-primary-foreground"
                               : "border-input bg-background text-muted-foreground hover:bg-secondary hover:text-secondary-foreground hover:border-primary/30"
                           )}
                         >
                           {t.label}
-                        </button>
+                        </Button>
                       )
                     })}
                   </div>

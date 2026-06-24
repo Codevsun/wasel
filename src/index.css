@@ -1,53 +1,103 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 250 30% 98%;
-    --foreground: 240 12% 8%;
+    /* Vercel palette — HSL channels (no hsl() wrapper, for Tailwind opacity modifiers) */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 0%;
     --card: 0 0% 100%;
-    --card-foreground: 240 12% 8%;
+    --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 12% 8%;
-    --primary: 258 62% 58%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 258 32% 93%;
-    --secondary-foreground: 258 40% 28%;
-    --muted: 240 14% 95%;
-    --muted-foreground: 240 8% 48%;
-    --accent: 258 32% 93%;
-    --accent-foreground: 258 40% 28%;
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 12% 89%;
-    --input: 240 12% 89%;
-    --ring: 258 62% 58%;
-    --radius: 0.75rem;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 358 75% 59%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
+    --radius: 0.625rem;
     --success: 152 52% 50%;
     --success-foreground: 0 0% 100%;
+
+    /* Chart */
+    --chart-1: 224 45% 45%;
+    --chart-2: 286 42% 50%;
+    --chart-3: 46 65% 68%;
+    --chart-4: 1 57% 56%;
+    --chart-5: 147 38% 52%;
+
+    /* Sidebar */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 98%;
   }
 
   .dark {
-    --background: 240 18% 7%;
-    --foreground: 240 15% 95%;
-    --card: 240 14% 10%;
-    --card-foreground: 240 15% 95%;
-    --popover: 240 14% 10%;
-    --popover-foreground: 240 15% 95%;
-    --primary: 258 62% 68%;
-    --primary-foreground: 240 18% 7%;
-    --secondary: 240 10% 18%;
-    --secondary-foreground: 240 15% 85%;
-    --muted: 240 10% 18%;
-    --muted-foreground: 240 8% 55%;
-    --accent: 240 10% 18%;
-    --accent-foreground: 240 15% 85%;
-    --destructive: 0 60% 50%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 10% 20%;
-    --input: 240 10% 20%;
-    --ring: 258 62% 68%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 358 55% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    --ring: 0 0% 83%;
+
+    /* Chart */
+    --chart-1: 224 45% 45%;
+    --chart-2: 286 42% 50%;
+    --chart-3: 46 65% 68%;
+    --chart-4: 1 57% 56%;
+    --chart-5: 147 38% 52%;
+
+    /* Sidebar */
+    --sidebar: 0 0% 0%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 5.9% 10%;
+  }
+
+  .theme {
+    --font-geist: 'Geist Variable', sans-serif;
+    --font-geist-mono: 'Geist Mono Variable', monospace;
+    --font-body-family: var(--font-geist);
+    --font-body-weight: 400;
+    --font-body-tracking: normal;
+    --font-display-family: var(--font-geist);
+    --font-display-weight: 600;
+    --font-display-tracking: tighter;
   }
 }
 
@@ -57,7 +107,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Geist Variable', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  pre, code {
+    font-family: 'Geist Mono Variable', monospace;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -70,6 +124,28 @@
     @apply bg-border rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/40;
+    @apply bg-muted-foreground;
+    opacity: 0.4;
   }
+}
+
+/* Vercel-style button overrides */
+[data-slot="button"][data-variant="default"],
+[data-slot="button"][data-variant="outline"],
+[data-slot="button"][data-variant="secondary"],
+[data-slot="button"][data-variant="ghost"],
+[data-slot="button"][data-variant="destructive"] {
+  border-radius: calc(var(--radius) + 16px);
+}
+
+input[data-slot="input"], textarea[data-slot="textarea"] {
+  border-radius: calc(var(--radius) - 4px);
+}
+
+[data-slot="select-trigger"] {
+  border-radius: calc(var(--radius) - 4px);
+}
+
+[data-slot="calendar"] {
+  --cell-radius: calc(var(--radius) + 16px);
 }

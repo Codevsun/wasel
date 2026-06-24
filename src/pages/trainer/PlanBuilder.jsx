@@ -5,20 +5,22 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
+import { Card, CardContent, CardHeader } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Badge } from "../../components/ui/badge"
 import { Separator } from "../../components/ui/separator"
 import { Textarea } from "../../components/ui/textarea"
-import { Switch } from "../../components/ui/switch"
 import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "../../components/ui/select"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "../../components/ui/dialog"
+import {
+  Collapsible, CollapsibleTrigger, CollapsibleContent,
+} from "../../components/ui/collapsible"
 import {
   BookOpen, Plus, ChevronDown, ChevronRight, Copy, Layers,
   Calendar, FileText, FlaskConical, HelpCircle, Upload,
@@ -66,7 +68,7 @@ export default function PlanBuilder() {
   // Create plan dialog
   const [planDialogOpen, setPlanDialogOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState(null)
-  const [planForm, setPlanForm] = useState({ name: "", duration_weeks: 8, is_template: false })
+  const [planForm, setPlanForm] = useState({ name: "" })
   const [savingPlan, setSavingPlan] = useState(false)
 
   // Add track dialog
@@ -152,14 +154,12 @@ export default function PlanBuilder() {
       if (editingPlan) {
         await updateDoc(doc(db, "plans", editingPlan.id), {
           name: planForm.name.trim(),
-          duration_weeks: Number(planForm.duration_weeks),
-          is_template: planForm.is_template,
+          is_template: true,
         })
       } else {
         await addDoc(collection(db, "plans"), {
           name: planForm.name.trim(),
-          duration_weeks: Number(planForm.duration_weeks),
-          is_template: planForm.is_template,
+          is_template: true,
           track_ids: [],
           created_by: user?.uid,
           created_at: serverTimestamp(),
@@ -167,7 +167,7 @@ export default function PlanBuilder() {
       }
       setPlanDialogOpen(false)
       setEditingPlan(null)
-      setPlanForm({ name: "", duration_weeks: 8, is_template: false })
+      setPlanForm({ name: "" })
     } catch (err) {
       console.error(err)
       alert("Failed to save plan: " + err.message)
@@ -181,8 +181,7 @@ export default function PlanBuilder() {
     try {
       await addDoc(collection(db, "plans"), {
         name: `${plan.name} (Copy)`,
-        duration_weeks: plan.duration_weeks,
-        is_template: false,
+        is_template: true,
         track_ids: [],
         created_by: user?.uid,
         created_at: serverTimestamp(),
@@ -238,7 +237,12 @@ export default function PlanBuilder() {
         ...prev,
         [moduleDialog.track_id]: [
           ...(prev[moduleDialog.track_id] || []),
-          { id: ref.id, title: moduleForm.title.trim(), track_id: moduleDialog.track_id, order: moduleForm.order || 0 },
+          {
+            id: ref.id,
+            title: moduleForm.title.trim(),
+            track_id: moduleDialog.track_id,
+            order: moduleForm.order || 0,
+          },
         ],
       }))
       setModuleDialog({ open: false, track_id: null })
@@ -347,12 +351,12 @@ export default function PlanBuilder() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Plan Builder</h1>
+          <h1 className="text-2xl font-bold">Plan Templates</h1>
           <p className="text-muted-foreground text-sm">
-            Build internship plans with tracks, modules, milestones, and tasks.
+            Build reusable curriculum templates. Set durations when assigning a plan to a cohort.
           </p>
         </div>
-        <Button onClick={() => { setEditingPlan(null); setPlanForm({ name: "", duration_weeks: 8, is_template: false }); setPlanDialogOpen(true) }}>
+        <Button onClick={() => { setEditingPlan(null); setPlanForm({ name: "" }); setPlanDialogOpen(true) }}>
           <Plus className="h-4 w-4" />
           New Plan
         </Button>
@@ -368,9 +372,9 @@ export default function PlanBuilder() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <BookOpen className="h-10 w-10 mb-3 opacity-30" />
-            <p className="font-medium">No plans yet</p>
+            <p className="font-medium">No templates yet</p>
             <Button className="mt-4" onClick={() => setPlanDialogOpen(true)}>
-              <Plus className="h-4 w-4" /> Create your first plan
+              <Plus className="h-4 w-4" /> Create your first template
             </Button>
           </CardContent>
         </Card>
@@ -381,33 +385,34 @@ export default function PlanBuilder() {
             const tracks = tracksMap[plan.id] || []
 
             return (
-              <Card key={plan.id}>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="w-full text-left cursor-pointer"
-                  onClick={() => togglePlan(plan.id)}
-                  onKeyDown={(e) => e.key === "Enter" && togglePlan(plan.id)}
-                >
+              <Collapsible
+                key={plan.id}
+                open={isOpen}
+                onOpenChange={() => togglePlan(plan.id)}
+              >
+                <Card>
                   <CardHeader className="flex flex-row items-center gap-3 py-4">
                     <BookOpen className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{plan.name}</span>
-                        {plan.is_template && <Badge variant="secondary" className="text-xs">Template</Badge>}
+                    <CollapsibleTrigger asChild>
+                      <div className="flex-1 min-w-0 cursor-pointer">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{plan.name}</span>
+                          <Badge variant="secondary" className="text-xs">Template</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {(plan.track_ids || []).length > 0
+                            ? `${plan.track_ids.length} track${plan.track_ids.length !== 1 ? "s" : ""}`
+                            : "No tracks yet"}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {plan.duration_weeks} week{plan.duration_weeks !== 1 ? "s" : ""}
-                        {(plan.track_ids || []).length > 0 && ` · ${plan.track_ids.length} track${plan.track_ids.length !== 1 ? "s" : ""}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    </CollapsibleTrigger>
+                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => {
                           setEditingPlan(plan)
-                          setPlanForm({ name: plan.name, duration_weeks: plan.duration_weeks, is_template: plan.is_template })
+                          setPlanForm({ name: plan.name })
                           setPlanDialogOpen(true)
                         }}
                       >
@@ -425,111 +430,117 @@ export default function PlanBuilder() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                    {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                  </CardHeader>
-                </div>
-
-                {isOpen && (
-                  <CardContent className="pt-0 pb-4 space-y-4">
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold">Tracks</h4>
-                      <Button size="sm" variant="outline" onClick={() => setTrackDialog({ open: true, plan_id: plan.id })}>
-                        <Plus className="h-3 w-3" /> Add Track
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0">
+                        {isOpen
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                       </Button>
-                    </div>
+                    </CollapsibleTrigger>
+                  </CardHeader>
 
-                    {tracks.length === 0 ? (
-                      <p className="text-sm text-muted-foreground pl-4">No tracks yet. Add a track to get started.</p>
-                    ) : (
-                      <div className="space-y-4 pl-2">
-                        {[...tracks].sort((a, b) => (a.order || 0) - (b.order || 0)).map((track) => {
-                          const modules = modulesMap[track.id] || []
-                          return (
-                            <div key={track.id} className="border border-border rounded-lg overflow-hidden">
-                              <div className="flex items-center gap-2 px-3 py-2 bg-muted/40">
-                                <Badge variant="outline" className="text-xs capitalize">{track.category}</Badge>
-                                <span className="font-medium text-sm">{track.label}</span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="ml-auto h-7 text-xs"
-                                  onClick={() => setModuleDialog({ open: true, track_id: track.id })}
-                                >
-                                  <Plus className="h-3 w-3" /> Module
-                                </Button>
-                              </div>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 pb-4 space-y-4">
+                      <Separator />
 
-                              {modules.length > 0 && (
-                                <div className="divide-y divide-border">
-                                  {[...modules].sort((a, b) => (a.order || 0) - (b.order || 0)).map((mod) => {
-                                    const milestones = milestonesMap[mod.id] || []
-                                    return (
-                                      <div key={mod.id} className="px-3 py-2 space-y-2">
-                                        <div className="flex items-center gap-2">
-                                          <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                                          <span className="text-sm font-medium">{mod.title}</span>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="ml-auto h-6 text-xs"
-                                            onClick={() => setMilestoneDialog({ open: true, module_id: mod.id })}
-                                          >
-                                            <Plus className="h-3 w-3" /> Milestone
-                                          </Button>
-                                        </div>
-
-                                        {milestones.length > 0 && (
-                                          <div className="ml-5 space-y-2">
-                                            {[...milestones].sort((a, b) => (a.week_number || 0) - (b.week_number || 0)).map((ms) => {
-                                              const tasks = tasksMap[ms.id] || []
-                                              return (
-                                                <div key={ms.id} className="space-y-1.5">
-                                                  <div className="flex items-center gap-2">
-                                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                                    <span className="text-xs font-semibold">
-                                                      Week {ms.week_number} · {ms.title}
-                                                    </span>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      className="ml-auto h-6 text-xs"
-                                                      onClick={() => setTaskDialog({ open: true, milestone_id: ms.id })}
-                                                    >
-                                                      <Plus className="h-3 w-3" /> Task
-                                                    </Button>
-                                                  </div>
-
-                                                  {tasks.length > 0 && (
-                                                    <div className="ml-5 space-y-1">
-                                                      {[...tasks].sort((a, b) => (a.order || 0) - (b.order || 0)).map((task) => (
-                                                        <div key={task.id} className="flex items-center gap-2 p-1.5 rounded bg-muted/30 text-xs">
-                                                          <TaskTypeIcon type={task.type} className="text-muted-foreground shrink-0" />
-                                                          <span className="truncate">{task.title}</span>
-                                                          <Badge variant="outline" className="text-xs capitalize ml-auto shrink-0">{task.type}</Badge>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              )
-                                            })}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold">Tracks</h4>
+                        <Button size="sm" variant="outline" onClick={() => setTrackDialog({ open: true, plan_id: plan.id })}>
+                          <Plus className="h-3 w-3" /> Add Track
+                        </Button>
                       </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
+
+                      {tracks.length === 0 ? (
+                        <p className="text-sm text-muted-foreground pl-4">No tracks yet. Add a track to get started.</p>
+                      ) : (
+                        <div className="space-y-4 pl-2">
+                          {[...tracks].sort((a, b) => (a.order || 0) - (b.order || 0)).map((track) => {
+                            const modules = modulesMap[track.id] || []
+                            return (
+                              <div key={track.id} className="border border-border rounded-lg overflow-hidden">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-muted/40">
+                                  <Badge variant="outline" className="text-xs capitalize">{track.category}</Badge>
+                                  <span className="font-medium text-sm">{track.label}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="ml-auto h-7 text-xs"
+                                    onClick={() => setModuleDialog({ open: true, track_id: track.id })}
+                                  >
+                                    <Plus className="h-3 w-3" /> Module
+                                  </Button>
+                                </div>
+
+                                {modules.length > 0 && (
+                                  <div className="divide-y divide-border">
+                                    {[...modules].sort((a, b) => (a.order || 0) - (b.order || 0)).map((mod) => {
+                                      const milestones = milestonesMap[mod.id] || []
+                                      return (
+                                        <div key={mod.id} className="px-3 py-2 space-y-2">
+                                          <div className="flex items-center gap-2">
+                                            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{mod.title}</span>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="ml-auto h-6 text-xs"
+                                              onClick={() => setMilestoneDialog({ open: true, module_id: mod.id })}
+                                            >
+                                              <Plus className="h-3 w-3" /> Milestone
+                                            </Button>
+                                          </div>
+
+                                          {milestones.length > 0 && (
+                                            <div className="ml-5 space-y-2">
+                                              {[...milestones].sort((a, b) => (a.week_number || 0) - (b.week_number || 0)).map((ms) => {
+                                                const tasks = tasksMap[ms.id] || []
+                                                return (
+                                                  <div key={ms.id} className="space-y-1.5">
+                                                    <div className="flex items-center gap-2">
+                                                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                                      <span className="text-xs font-semibold">
+                                                        Week {ms.week_number} · {ms.title}
+                                                      </span>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="ml-auto h-6 text-xs"
+                                                        onClick={() => setTaskDialog({ open: true, milestone_id: ms.id })}
+                                                      >
+                                                        <Plus className="h-3 w-3" /> Task
+                                                      </Button>
+                                                    </div>
+
+                                                    {tasks.length > 0 && (
+                                                      <div className="ml-5 space-y-1">
+                                                        {[...tasks].sort((a, b) => (a.order || 0) - (b.order || 0)).map((task) => (
+                                                          <div key={task.id} className="flex items-center gap-2 p-1.5 rounded bg-muted/30 text-xs">
+                                                            <TaskTypeIcon type={task.type} className="text-muted-foreground shrink-0" />
+                                                            <span className="truncate">{task.title}</span>
+                                                            <Badge variant="outline" className="text-xs capitalize ml-auto shrink-0">{task.type}</Badge>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )
           })}
         </div>
@@ -539,40 +550,22 @@ export default function PlanBuilder() {
       <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingPlan ? "Edit Plan" : "Create Plan"}</DialogTitle>
+            <DialogTitle>{editingPlan ? "Edit Template" : "Create Template"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>Plan Name <span className="text-destructive">*</span></Label>
+              <Label>Template Name <span className="text-destructive">*</span></Label>
               <Input
-                placeholder="e.g. Frontend Fundamentals 2025"
+                placeholder="e.g. Git & GitHub Fundamentals"
                 value={planForm.name}
                 onChange={(e) => setPlanForm((f) => ({ ...f, name: e.target.value }))}
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Duration (weeks)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={52}
-                value={planForm.duration_weeks}
-                onChange={(e) => setPlanForm((f) => ({ ...f, duration_weeks: e.target.value }))}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch
-                id="is_template"
-                checked={planForm.is_template}
-                onCheckedChange={(v) => setPlanForm((f) => ({ ...f, is_template: v }))}
-              />
-              <Label htmlFor="is_template">Save as template</Label>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
             <Button onClick={handleSavePlan} disabled={!planForm.name.trim() || savingPlan}>
-              {savingPlan ? "Saving..." : editingPlan ? "Save Changes" : "Create Plan"}
+              {savingPlan ? "Saving..." : editingPlan ? "Save Changes" : "Create Template"}
             </Button>
           </DialogFooter>
         </DialogContent>

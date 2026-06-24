@@ -5,7 +5,7 @@ import {
   doc, updateDoc, arrayUnion, deleteDoc,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
@@ -18,10 +18,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "../../components/ui/dialog"
 import { Label } from "../../components/ui/label"
-import { Separator } from "../../components/ui/separator"
 import { Checkbox } from "../../components/ui/checkbox"
 import {
-  Users, Search, AlertTriangle, ChevronRight, Filter, UserCheck, Trash2,
+  Users, Search, AlertTriangle, ChevronRight, UserCheck, Trash2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -287,12 +286,14 @@ export default function InternQueue() {
               {filtered.length !== interns.length && ` (filtered from ${interns.length})`}
             </CardTitle>
             {filtered.length > 0 && (
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
                 onClick={selectAll}
               >
                 {selected.size === filtered.length ? "Deselect all" : "Select all"}
-              </button>
+              </Button>
             )}
           </div>
         </CardHeader>
@@ -401,18 +402,22 @@ export default function InternQueue() {
                       )}
                     </div>
 
-                    <button
-                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive h-8 w-8"
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(intern) }}
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
                       onClick={() => navigate(`/trainer/interns/${intern.id}`)}
                     >
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </button>
+                    </Button>
                   </div>
                 )
               })}

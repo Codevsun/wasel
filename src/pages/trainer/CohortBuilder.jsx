@@ -5,6 +5,12 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
+import { loadPlanStructure } from "../../lib/progress"
+import {
+  draftPlacementsFromCohort, lastScheduledWeek,
+  placementsToModuleSchedule,
+} from "../../lib/cohortSchedule"
+import PlanScheduleCalendar from "../../components/trainer/PlanScheduleCalendar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -22,9 +28,8 @@ import {
 } from "../../components/ui/select"
 import {
   Layers, Plus, Users, ChevronDown, ChevronRight, CalendarDays,
-  BookOpen, FolderOpen, Trash2,
+  BookOpen, FolderOpen, Trash2, Save,
 } from "lucide-react"
-import { cn } from "../../lib/utils"
 
 function formatDate(ts) {
   if (!ts) return "—"
@@ -69,6 +74,14 @@ export default function CohortBuilder() {
   const [groupName, setGroupName] = useState("")
   const [addingGroup, setAddingGroup] = useState(false)
 
+  // Plan schedule per cohort
+  const [planDataMap, setPlanDataMap] = useState({})
+  const [scheduleDraft, setScheduleDraft] = useState({})
+  const [loadingPlanFor, setLoadingPlanFor] = useState(null)
+  const [savingScheduleFor, setSavingScheduleFor] = useState(null)
+
+  const templatePlans = plans.filter((p) => p.is_template !== false)
+
   useEffect(() => {
     const unsubs = []
 
@@ -99,12 +112,69 @@ export default function CohortBuilder() {
     return () => unsubs.forEach((u) => u())
   }, [])
 
-  const toggleExpand = (id) => {
+  const toggleExpand = (cohort) => {
+    const id = cohort.id
     setExpanded((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+        if (cohort.plan_id) loadCohortPlan(cohort)
+      }
       return next
     })
+  }
+
+  const loadCohortPlan = async (cohort) => {
+    if (!cohort.plan_id || planDataMap[cohort.id]) return
+    setLoadingPlanFor(cohort.id)
+    try {
+      const { tracks, modules } = await loadPlanStructure(cohort.plan_id)
+      setPlanDataMap((prev) => ({ ...prev, [cohort.id]: { tracks, modules } }))
+
+      const placements = draftPlacementsFromCohort(cohort, modules, tracks)
+      const scheduledEnd = lastScheduledWeek(placements)
+      setScheduleDraft((prev) => ({
+        ...prev,
+        [cohort.id]: {
+          duration_weeks: cohort.duration_weeks ?? (scheduledEnd || 8),
+          module_placements: placements,
+        },
+      }))
+    } catch (err) {
+      console.error(err)
+      alert("Failed to load plan: " + err.message)
+    } finally {
+      setLoadingPlanFor(null)
+    }
+  }
+
+  const updateScheduleDraft = (cohortId, patch) => {
+    setScheduleDraft((prev) => ({
+      ...prev,
+      [cohortId]: { ...prev[cohortId], ...patch },
+    }))
+  }
+
+  const handleSaveSchedule = async (cohort) => {
+    const draft = scheduleDraft[cohort.id]
+    const planData = planDataMap[cohort.id]
+    if (!draft || !planData) return
+
+    setSavingScheduleFor(cohort.id)
+    try {
+      const module_schedule = placementsToModuleSchedule(draft.module_placements)
+      await updateDoc(doc(db, "cohorts", cohort.id), {
+        duration_weeks: Number(draft.duration_weeks) || lastScheduledWeek(draft.module_placements),
+        module_schedule,
+      })
+    } catch (err) {
+      console.error(err)
+      alert("Failed to save schedule: " + err.message)
+    } finally {
+      setSavingScheduleFor(null)
+    }
   }
 
   const toggleMember = (uid) => {
@@ -247,11 +317,12 @@ export default function CohortBuilder() {
             return (
               <Card key={cohort.id} className="overflow-hidden">
                 <div className="flex items-center">
-                  <button
-                    className="flex-1 text-left"
-                    onClick={() => toggleExpand(cohort.id)}
+                  <Button
+                    variant="ghost"
+                    className="flex-1 text-left justify-start h-auto p-0 hover:bg-transparent focus-visible:ring-0"
+                    onClick={() => toggleExpand(cohort)}
                   >
-                    <CardHeader className="flex flex-row items-center gap-4 py-4">
+                    <CardHeader className="flex flex-row items-center gap-4 py-4 w-full">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold">{cohort.name}</span>
@@ -262,6 +333,11 @@ export default function CohortBuilder() {
                             <Badge variant="outline" className="text-xs gap-1">
                               <BookOpen className="h-3 w-3" />
                               {plan.name}
+                            </Badge>
+                          )}
+                          {cohort.duration_weeks && (
+                            <Badge variant="outline" className="text-xs">
+                              {cohort.duration_weeks} weeks
                             </Badge>
                           )}
                         </div>
@@ -285,17 +361,65 @@ export default function CohortBuilder() {
                         ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                         : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                     </CardHeader>
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="p-4 text-muted-foreground hover:text-destructive transition-colors shrink-0"
                     onClick={() => setDeleteTarget(cohort)}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
 
                 {isOpen && (
                   <CardContent className="pt-0 pb-4 space-y-4">
+                    <Separator />
+
+                    {/* Plan schedule */}
+                    {cohort.plan_id ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div>
+                            <h4 className="text-sm font-medium">Plan Schedule</h4>
+                            <p className="text-xs text-muted-foreground">
+                              Drag on the calendar to place each module on the timeline.
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveSchedule(cohort)}
+                            disabled={!scheduleDraft[cohort.id] || savingScheduleFor === cohort.id}
+                          >
+                            <Save className="h-3.5 w-3.5" />
+                            {savingScheduleFor === cohort.id ? "Saving..." : "Save Schedule"}
+                          </Button>
+                        </div>
+
+                        {loadingPlanFor === cohort.id ? (
+                          <div className="h-24 animate-pulse rounded-lg bg-muted" />
+                        ) : planDataMap[cohort.id] ? (
+                          <PlanScheduleCalendar
+                            durationWeeks={scheduleDraft[cohort.id]?.duration_weeks ?? 8}
+                            onDurationChange={(n) => updateScheduleDraft(cohort.id, { duration_weeks: n })}
+                            startDate={cohort.start_date}
+                            tracks={planDataMap[cohort.id].tracks}
+                            modules={planDataMap[cohort.id].modules}
+                            placements={scheduleDraft[cohort.id]?.module_placements ?? {}}
+                            onPlacementsChange={(module_placements) =>
+                              updateScheduleDraft(cohort.id, { module_placements })
+                            }
+                          />
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Loading plan structure...</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No plan template assigned. Edit this cohort to attach one.
+                      </p>
+                    )}
+
                     <Separator />
 
                     {/* Members */}
@@ -413,19 +537,19 @@ export default function CohortBuilder() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Assign Plan (optional)</Label>
+              <Label>Plan Template</Label>
               <Select
                 value={form.plan_id}
                 onValueChange={(v) => setForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="No plan" />
+                  <SelectValue placeholder="Select a template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No plan</SelectItem>
-                  {plans.map((p) => (
+                  <SelectItem value="none">No template</SelectItem>
+                  {templatePlans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} {p.is_template && "(template)"}
+                      {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -443,9 +567,9 @@ export default function CohortBuilder() {
                   interns.map((intern) => {
                     const sel = form.member_uids.includes(intern.id)
                     return (
-                      <label
+                      <Label
                         key={intern.id}
-                        className="flex items-center gap-3 px-3 py-2 hover:bg-accent cursor-pointer"
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-accent cursor-pointer font-normal"
                       >
                         <Checkbox
                           checked={sel}
@@ -460,7 +584,7 @@ export default function CohortBuilder() {
                           <p className="text-sm font-medium truncate">{intern.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{intern.email}</p>
                         </div>
-                      </label>
+                      </Label>
                     )
                   })
                 )}

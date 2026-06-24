@@ -73,7 +73,8 @@ service cloud.firestore {
     match /outcomes/{outcomeId} {
       allow read:  if isTrainer() ||
                       (isIntern() && resource.data.user_id == request.auth.uid);
-      allow create: if isIntern() && request.resource.data.user_id == request.auth.uid;
+      allow create: if isTrainer() ||
+                      (isIntern() && request.resource.data.user_id == request.auth.uid);
       allow update: if isTrainer() ||
                       (isIntern() && resource.data.user_id == request.auth.uid);
     }
@@ -92,7 +93,8 @@ service cloud.firestore {
     // write: own uid only | read: own uid OR trainer OR management
     match /progress/{uid} {
       allow read:  if isOwner(uid) || isTrainer() || isManagement();
-      allow write: if isOwner(uid);
+      // Interns update own progress; trainers update when approving submissions
+      allow write: if isOwner(uid) || isTrainer();
     }
 
     // ── quizzes ───────────────────────────────────────────────────

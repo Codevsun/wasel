@@ -6,10 +6,11 @@ import {
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
 import { syncProgressWithCohort } from "../../lib/progress"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
+import { Card, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
-import { Separator } from "../../components/ui/separator"
+import { Button } from "../../components/ui/button"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../components/ui/collapsible"
 import { cn } from "../../lib/utils"
 import {
   ChevronDown, ChevronRight, Lock, CheckCircle2, Clock, Circle,
@@ -79,6 +80,7 @@ export default function MyPlan() {
   const [error, setError] = useState(null)
 
   const [plan, setPlan] = useState(null)
+  const [cohort, setCohort] = useState(null)
   const [tracks, setTracks] = useState([])
   const [modules, setModules] = useState([])
   const [milestones, setMilestones] = useState([])
@@ -114,7 +116,9 @@ export default function MyPlan() {
 
         const cohortSnap = await getDoc(doc(db, "cohorts", cohortId))
         if (!cohortSnap.exists()) throw new Error("Cohort not found.")
-        const planId = cohortSnap.data().plan_id
+        const cohortData = { id: cohortSnap.id, ...cohortSnap.data() }
+        setCohort(cohortData)
+        const planId = cohortData.plan_id
         if (!planId) throw new Error("No plan assigned to cohort.")
 
         const planSnap = await getDoc(doc(db, "plans", planId))
@@ -256,7 +260,7 @@ export default function MyPlan() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">My Plan</h1>
         <p className="text-muted-foreground">
-          {plan?.name} &middot; {plan?.duration_weeks} weeks
+          {plan?.name} &middot; {cohort?.duration_weeks ?? "—"} weeks
         </p>
       </div>
 
@@ -285,162 +289,194 @@ export default function MyPlan() {
 
           return (
             <Card key={track.id} className="overflow-hidden">
-              {/* Track header */}
-              <button
-                className="w-full flex items-center gap-3 p-4 text-left hover:bg-accent/50 transition-colors"
-                onClick={() => toggle(setExpandedTracks, track.id)}
+              <Collapsible
+                open={!!expandedTracks[track.id]}
+                onOpenChange={() => toggle(setExpandedTracks, track.id)}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold">{track.label}</span>
-                    {track.category && (
-                      <Badge variant="outline" className="text-xs">{track.category}</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <Progress value={trackPct} className="h-1.5 flex-1 max-w-xs" />
-                    <span className="text-xs text-muted-foreground">{Math.round(trackPct)}%</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-muted-foreground">{trackTasks.length} tasks</span>
-                  {expandedTracks[track.id]
-                    ? <ChevronDown className="h-4 w-4" />
-                    : <ChevronRight className="h-4 w-4" />}
-                </div>
-              </button>
+                {/* Track header */}
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full flex items-center gap-3 p-4 h-auto text-left hover:bg-accent/50 transition-colors justify-start rounded-none"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold">{track.label}</span>
+                        {track.category && (
+                          <Badge variant="outline" className="text-xs">{track.category}</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Progress value={trackPct} className="h-1.5 flex-1 max-w-xs" />
+                        <span className="text-xs text-muted-foreground">{Math.round(trackPct)}%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground">{trackTasks.length} tasks</span>
+                      {expandedTracks[track.id]
+                        ? <ChevronDown className="h-4 w-4" />
+                        : <ChevronRight className="h-4 w-4" />}
+                    </div>
+                  </Button>
+                </CollapsibleTrigger>
 
-              {/* Modules */}
-              {expandedTracks[track.id] && (
-                <div className="border-t border-border">
-                  {trackModules.length === 0 ? (
-                    <p className="text-sm text-muted-foreground px-4 py-3">No modules yet.</p>
-                  ) : (
-                    trackModules.map((mod) => {
-                      const modMilestones = milestones
-                        .filter((ms) => ms.module_id === mod.id)
-                        .sort((a, b) => a.week_number - b.week_number)
+                {/* Modules */}
+                <CollapsibleContent>
+                  <div className="border-t border-border">
+                    {trackModules.length === 0 ? (
+                      <p className="text-sm text-muted-foreground px-4 py-3">No modules yet.</p>
+                    ) : (
+                      trackModules.map((mod) => {
+                        const modMilestones = milestones
+                          .filter((ms) => ms.module_id === mod.id)
+                          .sort((a, b) => a.week_number - b.week_number)
+                        const modSchedule = cohort?.module_schedule?.[mod.id]
 
-                      return (
-                        <div key={mod.id} className="border-b border-border last:border-b-0">
-                          {/* Module header */}
-                          <button
-                            className="w-full flex items-center gap-3 px-6 py-3 text-left hover:bg-accent/30 transition-colors"
-                            onClick={() => toggle(setExpandedModules, mod.id)}
-                          >
-                            <div className="h-2 w-2 rounded-full bg-primary/60 shrink-0" />
-                            <span className="flex-1 text-sm font-medium">{mod.title}</span>
-                            <span className="text-xs text-muted-foreground mr-2">
-                              {modMilestones.length} milestone{modMilestones.length !== 1 ? "s" : ""}
-                            </span>
-                            {expandedModules[mod.id]
-                              ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                              : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                          </button>
+                        return (
+                          <div key={mod.id} className="border-b border-border last:border-b-0">
+                            <Collapsible
+                              open={!!expandedModules[mod.id]}
+                              onOpenChange={() => toggle(setExpandedModules, mod.id)}
+                            >
+                              {/* Module header */}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full flex items-center gap-3 px-6 py-3 h-auto text-left hover:bg-accent/30 transition-colors justify-start rounded-none"
+                                >
+                                  <div className="h-2 w-2 rounded-full bg-primary/60 shrink-0" />
+                                  <span className="flex-1 text-sm font-medium">{mod.title}</span>
+                                  {modSchedule && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Week {modSchedule.start_week}
+                                      {modSchedule.weeks > 1 ? `–${modSchedule.start_week + modSchedule.weeks - 1}` : ""}
+                                    </Badge>
+                                  )}
+                                  <span className="text-xs text-muted-foreground mr-2">
+                                    {modMilestones.length} milestone{modMilestones.length !== 1 ? "s" : ""}
+                                  </span>
+                                  {expandedModules[mod.id]
+                                    ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                                </Button>
+                              </CollapsibleTrigger>
 
-                          {/* Milestones */}
-                          {expandedModules[mod.id] && (
-                            <div className="pl-12 pr-4 pb-2 space-y-2">
-                              {modMilestones.map((ms) => {
-                                const locked = isMilestoneLocked(ms, mod.id)
-                                const mStatus = milestoneStatus[ms.id] || "not_started"
-                                const msTasks = tasks.filter((t) => t.milestone_id === ms.id)
-                                const completionPct = milestoneCompletionPct(ms.id, tasks, completedTasks)
+                              {/* Milestones */}
+                              <CollapsibleContent>
+                                <div className="pl-12 pr-4 pb-2 space-y-2">
+                                  {modMilestones.map((ms) => {
+                                    const locked = isMilestoneLocked(ms, mod.id)
+                                    const mStatus = milestoneStatus[ms.id] || "not_started"
+                                    const msTasks = tasks.filter((t) => t.milestone_id === ms.id)
+                                    const completionPct = milestoneCompletionPct(ms.id, tasks, completedTasks)
 
-                                return (
-                                  <div
-                                    key={ms.id}
-                                    className={cn(
-                                      "rounded-lg border",
-                                      locked ? "opacity-60 bg-muted/30" : "bg-card"
-                                    )}
-                                  >
-                                    {/* Milestone header */}
-                                    <button
-                                      className="w-full flex items-center gap-2 p-3 text-left"
-                                      onClick={() => !locked && toggle(setExpandedMilestones, ms.id)}
-                                      disabled={locked}
-                                    >
-                                      {locked
-                                        ? <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                        : mStatus === "completed"
-                                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                          : mStatus === "in_progress"
-                                            ? <Clock className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
-                                            : <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
-                                      }
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
-                                          <span className="text-sm font-medium">{ms.title}</span>
-                                          <Badge variant="outline" className="text-xs shrink-0">
-                                            Week {ms.week_number}
-                                          </Badge>
-                                        </div>
-                                        {!locked && (
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <Progress value={completionPct} className="h-1 flex-1" />
-                                            <span className="text-xs text-muted-foreground">{completionPct}%</span>
-                                          </div>
+                                    return (
+                                      <div
+                                        key={ms.id}
+                                        className={cn(
+                                          "rounded-lg border",
+                                          locked ? "opacity-60 bg-muted/30" : "bg-card"
                                         )}
-                                      </div>
-                                      {!locked && (
-                                        expandedMilestones[ms.id]
-                                          ? <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
-                                          : <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                                      )}
-                                    </button>
-
-                                    {/* Tasks */}
-                                    {expandedMilestones[ms.id] && !locked && (
-                                      <div className="border-t border-border px-3 pb-2 pt-1 space-y-1">
-                                        {msTasks.length === 0 ? (
-                                          <p className="text-xs text-muted-foreground py-2">No tasks.</p>
-                                        ) : (
-                                          msTasks.map((task) => {
-                                            const outcome = outcomes[task.id]
-                                            const taskStatus = outcome?.status || "not_started"
-                                            const taskLocked = locked
-
-                                            return (
-                                              <button
-                                                key={task.id}
-                                                disabled={taskLocked}
-                                                onClick={() => !taskLocked && navigate(`/intern/tasks/${task.id}`)}
-                                                className={cn(
-                                                  "w-full flex items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
-                                                  taskLocked
-                                                    ? "cursor-not-allowed opacity-50"
-                                                    : "hover:bg-accent cursor-pointer group"
-                                                )}
-                                              >
-                                                <TaskStatusIndicator status={taskStatus} locked={taskLocked} />
-                                                <span className="flex-1 truncate text-xs">{task.title}</span>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                  {taskTypeIcon(task.type)}
-                                                  <Badge
-                                                    variant={taskTypeVariant(task.type)}
-                                                    className="text-xs px-1.5 py-0 h-4"
-                                                  >
-                                                    {task.type}
+                                      >
+                                        <Collapsible
+                                          open={!!expandedMilestones[ms.id] && !locked}
+                                          onOpenChange={() => !locked && toggle(setExpandedMilestones, ms.id)}
+                                          disabled={locked}
+                                        >
+                                          {/* Milestone header */}
+                                          <CollapsibleTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              disabled={locked}
+                                              className="w-full flex items-center gap-2 p-3 h-auto text-left justify-start rounded-lg"
+                                            >
+                                              {locked
+                                                ? <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                : mStatus === "completed"
+                                                  ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                                  : mStatus === "in_progress"
+                                                    ? <Clock className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+                                                    : <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                                              }
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                  <span className="text-sm font-medium">{ms.title}</span>
+                                                  <Badge variant="outline" className="text-xs shrink-0">
+                                                    Week {ms.week_number}
                                                   </Badge>
                                                 </div>
-                                              </button>
-                                            )
-                                          })
-                                        )}
+                                                {!locked && (
+                                                  <div className="flex items-center gap-2 mt-1">
+                                                    <Progress value={completionPct} className="h-1 flex-1" />
+                                                    <span className="text-xs text-muted-foreground">{completionPct}%</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                              {!locked && (
+                                                expandedMilestones[ms.id]
+                                                  ? <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                  : <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                              )}
+                                            </Button>
+                                          </CollapsibleTrigger>
+
+                                          {/* Tasks */}
+                                          <CollapsibleContent>
+                                            {!locked && (
+                                              <div className="border-t border-border px-3 pb-2 pt-1 space-y-1">
+                                                {msTasks.length === 0 ? (
+                                                  <p className="text-xs text-muted-foreground py-2">No tasks.</p>
+                                                ) : (
+                                                  msTasks.map((task) => {
+                                                    const outcome = outcomes[task.id]
+                                                    const taskStatus = outcome?.status || "not_started"
+                                                    const taskLocked = locked
+
+                                                    return (
+                                                      <Button
+                                                        key={task.id}
+                                                        variant="ghost"
+                                                        disabled={taskLocked}
+                                                        onClick={() => !taskLocked && navigate(`/intern/tasks/${task.id}`)}
+                                                        className={cn(
+                                                          "w-full flex items-center gap-2.5 rounded-md px-2 py-2 h-auto text-left text-sm transition-colors justify-start",
+                                                          taskLocked
+                                                            ? "cursor-not-allowed opacity-50"
+                                                            : "hover:bg-accent cursor-pointer"
+                                                        )}
+                                                      >
+                                                        <TaskStatusIndicator status={taskStatus} locked={taskLocked} />
+                                                        <span className="flex-1 truncate text-xs">{task.title}</span>
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                          {taskTypeIcon(task.type)}
+                                                          <Badge
+                                                            variant={taskTypeVariant(task.type)}
+                                                            className="text-xs px-1.5 py-0 h-4"
+                                                          >
+                                                            {task.type}
+                                                          </Badge>
+                                                        </div>
+                                                      </Button>
+                                                    )
+                                                  })
+                                                )}
+                                              </div>
+                                            )}
+                                          </CollapsibleContent>
+                                        </Collapsible>
                                       </div>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              )}
+                                    )
+                                  })}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           )
         })}

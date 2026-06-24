@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import {
-  doc, getDoc, getDocs, query, collection, where, orderBy,
+  doc, getDoc, getDocs, query, collection, where,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
+import { Card, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import { Progress } from "../../components/ui/progress"
@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "../../components/ui/avatar"
 import { cn } from "../../lib/utils"
 import {
   Trophy, Star, Zap, BookCheck, Target, TrendingUp, Medal,
-  Download, Award, CheckCircle2, AlertCircle,
+  Download, Award,
 } from "lucide-react"
 
 // ─── badge definitions ────────────────────────────────────────────────────────

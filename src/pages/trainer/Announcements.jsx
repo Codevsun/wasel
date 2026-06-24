@@ -5,12 +5,11 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
+import { Card, CardContent, CardHeader } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Badge } from "../../components/ui/badge"
-import { Separator } from "../../components/ui/separator"
 import { Textarea } from "../../components/ui/textarea"
 import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
@@ -22,7 +21,6 @@ import {
   Bell, Plus, Trash2, Users, Layers, Globe, AlertTriangle,
   CalendarDays,
 } from "lucide-react"
-import { cn } from "../../lib/utils"
 
 function formatDate(ts) {
   if (!ts) return ""

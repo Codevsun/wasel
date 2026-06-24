@@ -11,7 +11,6 @@ import { Progress } from "../../components/ui/progress"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import { Separator } from "../../components/ui/separator"
-import { Avatar, AvatarFallback } from "../../components/ui/avatar"
 import { cn } from "../../lib/utils"
 import {
   CheckCircle2, Clock, BookOpen, ChevronRight, Bell, Star, TrendingUp, Zap,
@@ -202,7 +201,7 @@ export default function InternHome() {
             <p className="text-2xl font-bold text-primary">{Math.round(overallPct)}%</p>
           </div>
           <div className="relative h-14 w-14">
-            <svg className="rotate-[-90deg]" viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
+            <svg viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
               <circle
                 cx="18" cy="18" r="15.9" fill="none"
@@ -268,10 +267,11 @@ export default function InternHome() {
                   const status = outcome?.status || "not_started"
                   const badge = taskTypeBadge(task.type)
                   return (
-                    <button
+                    <Button
                       key={task.id}
+                      variant="ghost"
                       onClick={() => navigate(`/intern/tasks/${task.id}`)}
-                      className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors text-left justify-start h-auto group"
                     >
                       <TaskStatusIcon status={status} />
                       <div className="flex-1 min-w-0">
@@ -284,7 +284,7 @@ export default function InternHome() {
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
+                    </Button>
                   )
                 })
               )}

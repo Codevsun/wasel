@@ -6,7 +6,6 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { GraduationCap, Moon, Sun, AlertCircle } from "lucide-react"
-import { cn } from "../lib/utils"
 
 const roleRedirects = {
   trainer: "/trainer",
@@ -57,12 +56,14 @@ export default function Login() {
       <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl dark:bg-indigo-900/20" />
 
       {/* Theme toggle */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         className="absolute top-4 right-4 rounded-xl p-2.5 text-muted-foreground hover:text-foreground hover:bg-white/60 dark:hover:bg-white/10 backdrop-blur-sm border border-border/50 transition-all"
         onClick={toggleTheme}
       >
         {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </button>
+      </Button>
 
       <div className="relative w-full max-w-sm">
         {/* Card */}

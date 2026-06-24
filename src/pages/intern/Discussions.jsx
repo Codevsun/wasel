@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card"
+import { Card, CardContent } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Textarea } from "../../components/ui/textarea"
@@ -124,14 +124,16 @@ function DiscussionCard({ discussion, authorNames, userId, onReplyAdded }) {
         </div>
 
         {/* Toggle replies */}
-        <button
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto px-0 py-0 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent transition-colors"
           onClick={() => setExpanded(!expanded)}
         >
           <MessageSquare className="h-3.5 w-3.5" />
           {replies.length} {replies.length === 1 ? "reply" : "replies"}
           {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
+        </Button>
 
         {/* Replies */}
         {expanded && (

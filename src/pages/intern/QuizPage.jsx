@@ -7,7 +7,7 @@ import {
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
 import { markTaskCompleted } from "../../lib/progress"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../../components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
@@ -15,7 +15,7 @@ import { Separator } from "../../components/ui/separator"
 import { cn } from "../../lib/utils"
 import {
   CheckCircle2, XCircle, ArrowLeft, ArrowRight, HelpCircle,
-  AlertCircle, RefreshCw, Trophy, Clock,
+  AlertCircle, RefreshCw, Trophy,
 } from "lucide-react"
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -239,7 +239,6 @@ export default function QuizPage() {
 
   const allAnswered = quiz?.questions.every((q) => answers[q.id] != null)
   const currentQ = quiz?.questions[currentQIdx]
-  const progress = quiz ? ((currentQIdx + 1) / quiz.questions.length) * 100 : 0
   const answeredCount = Object.keys(answers).length
 
   if (loading) {
@@ -323,13 +322,14 @@ export default function QuizPage() {
           {currentQ.options.map((opt, idx) => {
             const isSelected = answers[currentQ.id] === idx
             return (
-              <button
+              <Button
                 key={idx}
+                variant="ghost"
                 onClick={() => handleSelect(currentQ.id, idx)}
                 className={cn(
-                  "w-full flex items-center gap-3 rounded-lg border p-3.5 text-left text-sm transition-all",
+                  "w-full flex items-center gap-3 rounded-lg border p-3.5 text-left text-sm transition-all h-auto justify-start",
                   isSelected
-                    ? "border-primary bg-primary/5 text-primary font-medium"
+                    ? "border-primary bg-primary/5 text-primary font-medium hover:bg-primary/5 hover:text-primary"
                     : "hover:border-border/80 hover:bg-accent"
                 )}
               >
@@ -340,7 +340,7 @@ export default function QuizPage() {
                   {isSelected && <div className="h-2 w-2 rounded-full bg-primary-foreground" />}
                 </div>
                 <span>{opt}</span>
-              </button>
+              </Button>
             )
           })}
         </CardContent>
@@ -372,20 +372,21 @@ export default function QuizPage() {
           {/* Jump to any question */}
           <div className="flex items-center gap-1 flex-wrap">
             {quiz.questions.map((q, idx) => (
-              <button
+              <Button
                 key={q.id}
+                variant="ghost"
                 onClick={() => setCurrentQIdx(idx)}
                 className={cn(
-                  "h-7 w-7 rounded-md text-xs font-medium transition-colors border",
+                  "h-7 w-7 rounded-md text-xs font-medium transition-colors border p-0",
                   idx === currentQIdx
-                    ? "bg-primary text-primary-foreground border-primary"
+                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary hover:text-primary-foreground"
                     : answers[q.id] != null
-                      ? "bg-primary/10 border-primary/30 text-primary"
+                      ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
                       : "bg-muted border-transparent text-muted-foreground"
                 )}
               >
                 {idx + 1}
-              </button>
+              </Button>
             ))}
           </div>
         </CardFooter>

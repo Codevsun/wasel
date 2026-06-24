@@ -8,7 +8,6 @@ import {
   BarChart2, FileText, UserPlus, Layers, GraduationCap
 } from "lucide-react"
 import { Button } from "../ui/button"
-import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -23,7 +22,7 @@ const trainerNav = [
   { label: "Intern Queue", icon: Users, href: "/trainer/interns" },
   { label: "Create Account", icon: UserPlus, href: "/trainer/create-account", dialog: true },
   { label: "Cohort Builder", icon: Layers, href: "/trainer/cohorts" },
-  { label: "Plan Builder", icon: BookOpen, href: "/trainer/plans" },
+  { label: "Plan Templates", icon: BookOpen, href: "/trainer/plans" },
   { label: "Review Queue", icon: ClipboardList, href: "/trainer/reviews", badge: true },
   { label: "Announcements", icon: Bell, href: "/trainer/announcements" },
 ]
@@ -43,11 +42,6 @@ const managementNav = [
 const navByRole = { trainer: trainerNav, intern: internNav, management: managementNav }
 const roleLabels = { trainer: "Trainer", intern: "Intern", management: "Management" }
 
-const roleAccents = {
-  trainer: "from-violet-500 to-indigo-600",
-  intern: "from-sky-500 to-blue-600",
-  management: "from-emerald-500 to-teal-600",
-}
 
 export default function AppShell({ children }) {
   const { user, userDoc, role, logout } = useAuth()
@@ -67,8 +61,6 @@ export default function AppShell({ children }) {
     navigate("/login")
   }
 
-  const gradient = roleAccents[role] || roleAccents.trainer
-
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Mobile overlay */}
@@ -87,33 +79,27 @@ export default function AppShell({ children }) {
       )}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-          <div className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg",
-            gradient
-          )}
-            style={{ boxShadow: "0 4px 12px hsl(258 62% 58% / 0.25)" }}
-          >
-            <GraduationCap className="h-5 w-5 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground shadow-sm">
+            <GraduationCap className="h-5 w-5 text-background" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm leading-tight">Wasel</p>
             <p className="text-xs text-muted-foreground leading-tight">وصل</p>
           </div>
-          <button
-            className="lg:hidden rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden rounded-md h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* User mini-card */}
         <div className="px-3 pt-3 pb-1">
           <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-primary/6 border border-primary/10">
-            <div className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white text-xs font-bold",
-              gradient
-            )}>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background text-xs font-bold">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -133,17 +119,18 @@ export default function AppShell({ children }) {
 
               if (item.dialog) {
                 return (
-                  <button
+                  <Button
                     key={item.href}
+                    variant="ghost"
                     onClick={() => { setCreateAccountOpen(true); setSidebarOpen(false) }}
                     className={cn(
-                      "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                      "w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium transition-all",
                       "text-muted-foreground hover:bg-accent hover:text-foreground"
                     )}
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
                     {item.label}
-                  </button>
+                  </Button>
                 )
               }
 
@@ -172,22 +159,24 @@ export default function AppShell({ children }) {
 
         {/* Bottom */}
         <div className="border-t border-border p-3 space-y-0.5">
-          <button
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
             onClick={toggleTheme}
           >
             {theme === "dark"
               ? <Sun className="h-4 w-4 shrink-0" />
               : <Moon className="h-4 w-4 shrink-0" />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
-          <button
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive transition-all"
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive transition-all"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 shrink-0" />
             Sign out
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -195,22 +184,21 @@ export default function AppShell({ children }) {
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
         <header className="flex h-14 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-sm px-4 shrink-0">
-          <button
-            className="lg:hidden rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden rounded-md h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
-          </button>
+          </Button>
 
           <div className="flex-1" />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 rounded-xl h-9 px-2.5">
-                <div className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br text-white text-xs font-bold",
-                  gradient
-                )}>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background text-xs font-bold">
                   {initials}
                 </div>
                 <span className="hidden sm:inline text-sm font-medium">

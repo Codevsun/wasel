@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { AWAITING_REVIEW_STATUSES } from "../../lib/submissions"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
+import { Card, CardContent, CardHeader } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
@@ -253,11 +253,12 @@ export default function ReviewQueue() {
             const isCollapsed = collapsedCohorts.has(cohortKey)
             return (
               <Card key={cohortKey}>
-                <button
-                  className="w-full text-left"
+                <Button
+                  variant="ghost"
+                  className="w-full text-left p-0 h-auto hover:bg-transparent rounded-none rounded-t-xl"
                   onClick={() => toggleCohort(cohortKey)}
                 >
-                  <CardHeader className="flex flex-row items-center gap-3 py-3">
+                  <CardHeader className="flex flex-row items-center gap-3 py-3 w-full">
                     <div className="flex-1">
                       <span className="font-semibold text-sm">{name}</span>
                       <span className="ml-2 text-xs text-muted-foreground">
@@ -269,7 +270,7 @@ export default function ReviewQueue() {
                       : <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     }
                   </CardHeader>
-                </button>
+                </Button>
 
                 {!isCollapsed && (
                   <CardContent className="pt-0 pb-3 space-y-1">
@@ -281,9 +282,10 @@ export default function ReviewQueue() {
                       const TypeIcon = TYPE_ICON[taskType] || TYPE_ICON[sub.type] || FileText
 
                       return (
-                        <button
+                        <Button
                           key={sub.id}
-                          className="w-full flex items-center gap-3 p-2.5 rounded-md hover:bg-accent transition-colors text-left group"
+                          variant="ghost"
+                          className="w-full flex items-center gap-3 p-2.5 rounded-md h-auto justify-start text-left group"
                           onClick={() => navigate(`/trainer/reviews/${sub.id}`)}
                         >
                           <Avatar className="h-8 w-8 shrink-0">
@@ -314,7 +316,7 @@ export default function ReviewQueue() {
                             </span>
                             <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
-                        </button>
+                        </Button>
                       )
                     })}
                   </CardContent>

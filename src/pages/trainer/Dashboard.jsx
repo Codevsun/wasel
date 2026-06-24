@@ -10,12 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Avatar, AvatarFallback } from "../../components/ui/avatar"
-import { Separator } from "../../components/ui/separator"
 import { Progress } from "../../components/ui/progress"
 import {
   Users, Layers, ClipboardList, AlertTriangle, UserPlus,
-  BookOpen, Bell, ChevronRight, Clock, CheckCircle2, XCircle,
-  FileText, TrendingUp,
+  BookOpen, ChevronRight, Clock, CheckCircle2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -226,9 +224,10 @@ export default function TrainerDashboard() {
                     ? intern.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
                     : "?"
                   return (
-                    <button
+                    <Button
                       key={sub.id}
-                      className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors text-left"
+                      variant="ghost"
+                      className="w-full flex items-center gap-3 p-2 h-auto justify-start text-left"
                       onClick={() => navigate(`/trainer/reviews/${sub.id}`)}
                     >
                       <Avatar className="h-8 w-8 shrink-0">
@@ -253,7 +252,7 @@ export default function TrainerDashboard() {
                         </Badge>
                       )}
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
@@ -339,9 +338,10 @@ export default function TrainerDashboard() {
                 const intern = internMap[p.id]
                 if (!intern) return null
                 return (
-                  <button
+                  <Button
                     key={p.id}
-                    className="w-full flex items-center gap-3 hover:bg-accent rounded-md p-2 transition-colors text-left"
+                    variant="ghost"
+                    className="w-full flex items-center gap-3 h-auto p-2 justify-start text-left"
                     onClick={() => navigate(`/trainer/interns/${p.id}`)}
                   >
                     <Avatar className="h-8 w-8 shrink-0">
@@ -362,7 +362,7 @@ export default function TrainerDashboard() {
                       />
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </button>
+                  </Button>
                 )
               })}
             </div>

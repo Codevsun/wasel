@@ -6,7 +6,7 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { loadTrackLabels, loadMilestoneLabels } from "../../lib/progress"
+import { loadTrackLabels, loadMilestoneLabels, forceCloseMilestone } from "../../lib/progress"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
@@ -27,7 +27,7 @@ import {
 import {
   ArrowLeft, Mail, CheckCircle2, XCircle, Clock, AlertTriangle,
   FileText, Link2, BarChart2, BookOpen, MessageSquare, ChevronRight,
-  Save, RefreshCw,
+  Save, RefreshCw, Lock,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -85,6 +85,14 @@ export default function InternDetail() {
   const [reassigning, setReassigning] = useState(false)
   const [trackLabels, setTrackLabels] = useState({})
   const [milestoneLabels, setMilestoneLabels] = useState({})
+  const [closingMilestoneId, setClosingMilestoneId] = useState(null)
+  const [forceClosing, setForceClosing] = useState(false)
+
+  useEffect(() => {
+    if (!closingMilestoneId) return
+    const timer = setTimeout(() => setClosingMilestoneId(null), 3000)
+    return () => clearTimeout(timer)
+  }, [closingMilestoneId])
 
   useEffect(() => {
     const unsubs = []
@@ -184,6 +192,24 @@ export default function InternDetail() {
     }
   }
 
+  const handleForceCloseMilestone = async (milestoneId) => {
+    if (closingMilestoneId !== milestoneId) {
+      setClosingMilestoneId(milestoneId)
+      return
+    }
+
+    setForceClosing(true)
+    try {
+      await forceCloseMilestone(uid, milestoneId)
+      setClosingMilestoneId(null)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to close milestone: " + err.message)
+    } finally {
+      setForceClosing(false)
+    }
+  }
+
   const handleReassign = async () => {
     if (!newCohort) return
     setReassigning(true)
@@ -231,6 +257,7 @@ export default function InternDetail() {
   const cohortNames = (intern.cohort_ids || []).map((cid) => cohortMap[cid]?.name).filter(Boolean)
   const groupNames = (intern.group_ids || []).map((gid) => groupMap[gid]?.name).filter(Boolean)
   const trackPct = progress?.track_pct || {}
+  const trainerClosedMilestones = new Set(progress?.trainer_closed_milestones || [])
 
   return (
     <div className="p-6 space-y-6">
@@ -387,15 +414,32 @@ export default function InternDetail() {
                       <span className="text-sm">
                         {milestoneLabels[milestoneId]?.title ?? "Milestone"}
                       </span>
-                      <Badge
-                        variant={
-                          status === "completed" ? "success" :
-                          status === "in_progress" ? "warning" : "outline"
-                        }
-                        className="ml-auto text-xs capitalize"
-                      >
-                        {status?.replace("_", " ")}
-                      </Badge>
+                      {trainerClosedMilestones.has(milestoneId) && (
+                        <Badge variant="secondary" className="text-xs">Closed by Trainer</Badge>
+                      )}
+                      <div className="ml-auto flex items-center gap-2">
+                        {status !== "completed" && (
+                          <Button
+                            size="sm"
+                            variant={closingMilestoneId === milestoneId ? "destructive" : "outline"}
+                            className="h-7 text-xs"
+                            disabled={forceClosing}
+                            onClick={() => handleForceCloseMilestone(milestoneId)}
+                          >
+                            <Lock className="h-3 w-3" />
+                            {closingMilestoneId === milestoneId ? "Confirm?" : "Close"}
+                          </Button>
+                        )}
+                        <Badge
+                          variant={
+                            status === "completed" ? "success" :
+                            status === "in_progress" ? "warning" : "outline"
+                          }
+                          className="text-xs capitalize"
+                        >
+                          {status?.replace("_", " ")}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -419,9 +463,10 @@ export default function InternDetail() {
               ) : (
                 <div className="space-y-2">
                   {submissions.map((sub) => (
-                    <button
+                    <Button
                       key={sub.id}
-                      className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left"
+                      variant="ghost"
+                      className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left h-auto justify-start"
                       onClick={() => navigate(`/trainer/reviews/${sub.id}`)}
                     >
                       <div className={cn(
@@ -445,7 +490,7 @@ export default function InternDetail() {
                         <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       )}
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
