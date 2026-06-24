@@ -5,8 +5,9 @@ import { useTheme } from "../../contexts/ThemeContext"
 import {
   LayoutDashboard, Users, BookOpen, ClipboardList, Bell,
   LogOut, Moon, Sun, Menu, X, ChevronDown, Award, MessageSquare,
-  BarChart2, FileText, UserPlus, Layers, GraduationCap
+  BarChart2, FileText, UserPlus, Layers
 } from "lucide-react"
+import Logo from "./Logo"
 import { Button } from "../ui/button"
 import { Badge } from "../ui/badge"
 import {
@@ -78,9 +79,7 @@ export default function AppShell({ children }) {
       )}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground shadow-sm">
-            <GraduationCap className="h-5 w-5 text-background" />
-          </div>
+          <Logo className="h-9 w-9 rounded-xl" />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm leading-tight">Wasel</p>
             <p className="text-xs text-muted-foreground leading-tight">وصل</p>

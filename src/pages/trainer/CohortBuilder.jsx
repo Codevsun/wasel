@@ -734,7 +734,7 @@ export default function CohortBuilder() {
             {/* Members tab */}
             {!isBatch && (
               <TabsContent value="members" className="flex-1 overflow-y-auto m-0">
-                <div className="px-8 py-6 max-w-2xl">
+                <div className="px-8 py-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-sm font-semibold">{isSolo ? "Assigned Intern" : "Members"}</h3>
@@ -777,7 +777,7 @@ export default function CohortBuilder() {
             {/* Groups tab (batch) */}
             {isBatch && (
               <TabsContent value="groups" className="flex-1 overflow-y-auto m-0">
-                <div className="px-8 py-6 max-w-3xl">
+                <div className="px-8 py-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-sm font-semibold">Groups</h3>

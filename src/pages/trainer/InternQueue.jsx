@@ -180,6 +180,8 @@ export default function InternQueue() {
   }
 
   const isAtRisk = (intern) => {
+    if (intern.status !== "active") return false
+    if (!(intern.cohort_ids || []).length) return false
     const p = progressMap[intern.id]
     return p && typeof p.overall_pct === "number" && p.overall_pct < EXPECTED_PCT - 10
   }

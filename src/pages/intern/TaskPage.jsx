@@ -249,7 +249,7 @@ export default function TaskPage() {
   const currentStatus = outcome?.status || "not_started"
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <div className="p-6 space-y-6">
       {/* Back */}
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" />

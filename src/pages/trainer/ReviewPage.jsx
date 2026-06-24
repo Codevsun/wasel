@@ -191,7 +191,7 @@ export default function ReviewPage() {
     submission.status === "approved" || submission.status === "rejected"
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="p-6 space-y-6">
       <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate("/trainer/reviews")}>
         <ArrowLeft className="h-4 w-4" />
         Review Queue

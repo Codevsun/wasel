@@ -5,7 +5,8 @@ import { useTheme } from "../contexts/ThemeContext"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { GraduationCap, Moon, Sun, AlertCircle } from "lucide-react"
+import { Moon, Sun, AlertCircle } from "lucide-react"
+import Logo from "../components/shared/Logo"
 
 const roleRedirects = {
   trainer: "/trainer",
@@ -70,9 +71,7 @@ export default function Login() {
         <div className="rounded-2xl border border-border/60 bg-card/90 backdrop-blur-md shadow-xl shadow-violet-100/50 dark:shadow-violet-950/30 p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-200 dark:shadow-violet-900/50 mb-4">
-              <GraduationCap className="h-7 w-7 text-white" />
-            </div>
+            <Logo className="h-14 w-14 mb-4" />
             <h1 className="text-2xl font-bold tracking-tight">Wasel</h1>
             <p className="text-muted-foreground text-sm mt-0.5">وصل — Internship Portal</p>
           </div>

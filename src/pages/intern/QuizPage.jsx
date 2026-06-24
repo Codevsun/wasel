@@ -39,7 +39,7 @@ async function upsertOutcome(uid, taskId, patch) {
 
 function ResultScreen({ quiz, answers, score, passed, attempt, onRetry, onBack }) {
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
+    <div className="p-6 space-y-6">
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={onBack}>
         <ArrowLeft className="h-4 w-4" />
         Back to Task
@@ -243,7 +243,7 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4 max-w-2xl animate-pulse">
+      <div className="p-6 space-y-4 animate-pulse">
         <div className="h-5 bg-muted rounded w-1/4" />
         <div className="h-8 bg-muted rounded w-1/2" />
         <div className="h-48 bg-muted rounded" />
@@ -281,7 +281,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
+    <div className="p-6 space-y-6">
       {/* Back */}
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={() => navigate(`/intern/tasks/${taskId}`)}>
         <ArrowLeft className="h-4 w-4" />
