@@ -20,9 +20,10 @@ import {
 import { Label } from "../../components/ui/label"
 import { Checkbox } from "../../components/ui/checkbox"
 import {
-  Users, Search, AlertTriangle, ChevronRight, UserCheck, Trash2,
+  Users, Search, AlertTriangle, ChevronRight, UserCheck, Trash2, UserPlus,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
+import CreateAccount from "./CreateAccount"
 
 const TRACK_OPTIONS = ["frontend", "backend", "fullstack", "devops", "git", "ai", "cloud", "security"]
 const STATUS_OPTIONS = ["active", "inactive", "graduated", "withdrawn"]
@@ -52,6 +53,9 @@ export default function InternQueue() {
   // Delete
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Create account
+  const [createAccountOpen, setCreateAccountOpen] = useState(false)
 
   // Bulk assign
   const [selected, setSelected] = useState(new Set())
@@ -196,12 +200,17 @@ export default function InternQueue() {
             {interns.length} intern{interns.length !== 1 ? "s" : ""} registered
           </p>
         </div>
-        {selected.size > 0 && (
-          <Button onClick={() => setAssignOpen(true)}>
-            <UserCheck className="h-4 w-4" />
-            Assign {selected.size} intern{selected.size > 1 ? "s" : ""}
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <Button variant="outline" onClick={() => setAssignOpen(true)}>
+              <UserCheck className="h-4 w-4" />
+              Assign {selected.size} intern{selected.size > 1 ? "s" : ""}
+            </Button>
+          )}
+          <Button onClick={() => setCreateAccountOpen(true)}>
+            <UserPlus className="h-4 w-4" /> Create Account
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -498,6 +507,8 @@ export default function InternQueue() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateAccount open={createAccountOpen} onOpenChange={setCreateAccountOpen} />
     </div>
   )
 }

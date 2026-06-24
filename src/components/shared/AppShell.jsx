@@ -20,7 +20,6 @@ import CreateAccount from "../../pages/trainer/CreateAccount"
 const trainerNav = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/trainer" },
   { label: "Intern Queue", icon: Users, href: "/trainer/interns" },
-  { label: "Create Account", icon: UserPlus, href: "/trainer/create-account", dialog: true },
   { label: "Programs", icon: Layers, href: "/trainer/cohorts" },
   { label: "Plan Templates", icon: BookOpen, href: "/trainer/plans" },
   { label: "Review Queue", icon: ClipboardList, href: "/trainer/reviews", badge: true },
