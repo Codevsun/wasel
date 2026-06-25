@@ -27,7 +27,7 @@ import {
 import {
   ArrowLeft, Mail, CheckCircle2, XCircle, Clock, AlertTriangle,
   FileText, Link2, BarChart2, BookOpen, MessageSquare, ChevronRight,
-  Save, RefreshCw, Lock,
+  Save, RefreshCw, Lock, Plus, Trash2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -72,9 +72,11 @@ export default function InternDetail() {
   const [quizTaskLabels, setQuizTaskLabels] = useState({})
   const [cohortMap, setCohortMap] = useState({})
   const [groupMap, setGroupMap] = useState({})
-  const [note, setNote] = useState("")
-  const [savingNote, setSavingNote] = useState(false)
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState("")
+  const [addingNote, setAddingNote] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("overview")
 
   // Reassign dialog
   const [reassignOpen, setReassignOpen] = useState(false)
@@ -103,7 +105,13 @@ export default function InternDetail() {
         if (snap.exists()) {
           const data = { id: snap.id, ...snap.data() }
           setIntern(data)
-          setNote(data.note || "")
+          // support both old single `note` field and new `notes` array
+          const existing = data.notes || []
+          if (!existing.length && data.note) {
+            setNotes([{ id: "legacy", text: data.note, created_at: null }])
+          } else {
+            setNotes(existing)
+          }
         }
         setLoading(false)
       }, console.error)
@@ -180,15 +188,33 @@ export default function InternDetail() {
       .catch(console.error)
   }, [quizResults])
 
-  const handleSaveNote = async () => {
-    setSavingNote(true)
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return
+    setAddingNote(true)
     try {
-      await updateDoc(doc(db, "users", uid), { note })
+      const entry = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        text: newNote.trim(),
+        created_at: new Date().toISOString(),
+      }
+      const updated = [entry, ...notes]
+      await updateDoc(doc(db, "users", uid), { notes: updated, note: "" })
+      setNewNote("")
     } catch (err) {
       console.error(err)
       alert("Failed to save note: " + err.message)
     } finally {
-      setSavingNote(false)
+      setAddingNote(false)
+    }
+  }
+
+  const handleDeleteNote = async (id) => {
+    const updated = notes.filter((n) => n.id !== id)
+    try {
+      await updateDoc(doc(db, "users", uid), { notes: updated })
+    } catch (err) {
+      console.error(err)
+      alert("Failed to delete note: " + err.message)
     }
   }
 
@@ -315,7 +341,7 @@ export default function InternDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="submissions">
@@ -369,6 +395,36 @@ export default function InternDetail() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Notes */}
+          {notes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Notes</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setActiveTab("notes")}>
+                    <Plus className="h-3.5 w-3.5" /> Add note
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {notes.map((n, i) => (
+                  <div key={n.id}>
+                    {i > 0 && <Separator className="mb-3" />}
+                    <p className="text-sm whitespace-pre-wrap">{n.text}</p>
+                    {n.created_at && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(n.created_at).toLocaleString("en-US", {
+                          year: "numeric", month: "short", day: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Track Progress Bars */}
           {Object.keys(trackPct).length > 0 && (
@@ -554,28 +610,60 @@ export default function InternDetail() {
         </TabsContent>
 
         {/* Notes */}
-        <TabsContent value="notes" className="mt-4">
+        <TabsContent value="notes" className="mt-4 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Trainer Notes</CardTitle>
-              <CardDescription>
-                Private notes visible only to trainers. Saved to the intern's profile.
-              </CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Add Note</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <Textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Add notes about this intern's performance, progress, areas for improvement..."
-                rows={8}
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Write a note about this intern..."
+                rows={4}
                 className="resize-none"
               />
-              <Button onClick={handleSaveNote} disabled={savingNote}>
-                <Save className="h-4 w-4" />
-                {savingNote ? "Saving..." : "Save Note"}
+              <Button onClick={handleAddNote} disabled={addingNote || !newNote.trim()}>
+                <Plus className="h-4 w-4" />
+                {addingNote ? "Saving..." : "Add Note"}
               </Button>
             </CardContent>
           </Card>
+
+          {notes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {notes.length} Note{notes.length !== 1 ? "s" : ""}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-0 divide-y divide-border">
+                {notes.map((n) => (
+                  <div key={n.id} className="py-3 flex gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm whitespace-pre-wrap">{n.text}</p>
+                      {n.created_at && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(n.created_at).toLocaleString("en-US", {
+                            year: "numeric", month: "short", day: "numeric",
+                            hour: "2-digit", minute: "2-digit",
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteNote(n.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
