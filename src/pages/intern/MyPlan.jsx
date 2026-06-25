@@ -255,14 +255,18 @@ export default function MyPlan() {
   const completedTasks = progressDoc?.completed_tasks ?? []
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">My Plan</h1>
-        <p className="text-muted-foreground">
-          {plan?.name} &middot; {cohort?.duration_weeks ?? "—"} weeks
-        </p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">My Plan</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {plan?.name} &middot; {cohort?.duration_weeks ?? "—"} weeks
+            </p>
+          </div>
+        </div>
       </div>
+    <div className="p-6 space-y-6">
 
       {/* Overall progress */}
       <Card>
@@ -481,6 +485,7 @@ export default function MyPlan() {
           )
         })}
       </div>
+    </div>
     </div>
   )
 }

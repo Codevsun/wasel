@@ -359,26 +359,30 @@ export default function Reports() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Program Reports</h1>
-          <p className="text-muted-foreground text-sm">Cohort-level analytics and exports</p>
-        </div>
-        {reportData && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF} disabled={exporting}>
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              {exporting ? "Generating..." : "Export PDF"}
-            </Button>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Program Reports</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Cohort-level analytics and exports</p>
           </div>
-        )}
+          <div className="flex gap-2 flex-wrap">
+            {reportData && (
+              <>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleExportCSV}>
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF} disabled={exporting}>
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  {exporting ? "Generating..." : "Export PDF"}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
+    <div className="p-6 space-y-6">
 
       {/* Cohort selector */}
       <Card>
@@ -562,6 +566,7 @@ export default function Reports() {
           </CardContent>
         </Card>
       ) : null}
+    </div>
     </div>
   )
 }

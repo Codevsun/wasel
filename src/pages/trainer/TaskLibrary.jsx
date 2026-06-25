@@ -592,13 +592,18 @@ export default function TaskLibrary() {
   )
 
   return (
-    <div className="p-6 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Library &amp; Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage reusable tasks, projects, intern labels and track preferences — all in one place.
-        </p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Library &amp; Settings</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Manage reusable tasks, projects, intern labels and track preferences — all in one place.
+            </p>
+          </div>
+        </div>
       </div>
+    <div className="p-6 max-w-7xl">
 
       <div className="flex gap-6 items-start">
         {/* ── Left: Task Library ── */}
@@ -1053,6 +1058,7 @@ export default function TaskLibrary() {
           </div>{/* end card */}
         </div>{/* end right column */}
       </div>{/* end flex */}
+    </div>
     </div>
   )
 }

@@ -20,6 +20,7 @@ import TrainerAttendance from "./pages/trainer/Attendance"
 
 // Intern pages
 import InternHome from "./pages/intern/Home"
+import InternTasks from "./pages/intern/Tasks"
 import InternCheckIn from "./pages/intern/CheckIn"
 import MyPlan from "./pages/intern/MyPlan"
 import TaskPage from "./pages/intern/TaskPage"
@@ -90,6 +91,7 @@ export default function App() {
 
             {/* Intern routes */}
             <Route path="/intern" element={<InternLayout><InternHome /></InternLayout>} />
+            <Route path="/intern/my-tasks" element={<InternLayout><InternTasks /></InternLayout>} />
             <Route path="/intern/checkin" element={<InternLayout><InternCheckIn /></InternLayout>} />
             <Route path="/intern/plan" element={<InternLayout><MyPlan /></InternLayout>} />
             <Route path="/intern/plan/task/:taskId" element={<InternLayout><TaskPage /></InternLayout>} />

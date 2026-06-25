@@ -142,19 +142,24 @@ export default function Announcements() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Announcements</h1>
-          <p className="text-muted-foreground text-sm">
-            Broadcast messages to all interns, specific cohorts, or groups.
-          </p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Announcements</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Broadcast messages to all interns, specific cohorts, or groups.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New Announcement
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" />
-          New Announcement
-        </Button>
       </div>
+      <div className="p-6 space-y-6">
 
       {loading ? (
         <div className="space-y-3">
@@ -353,6 +358,7 @@ export default function Announcements() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

@@ -176,17 +176,22 @@ export default function TrainerAttendance() {
   const overallTodayPresent = interns.filter(i => records[i.id]?.status === "present" || records[i.id]?.status === "late").length
 
   return (
-    <div className="p-6 max-w-5xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Attendance</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track daily attendance and view reports</p>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{overallTodayPresent}/{interns.length} present today</span>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Attendance</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Track daily attendance and view reports</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{overallTodayPresent}/{interns.length} present today</span>
+            </div>
+          </div>
         </div>
       </div>
+      <div className="p-6 space-y-6">
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
@@ -379,6 +384,7 @@ export default function TrainerAttendance() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

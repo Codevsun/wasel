@@ -334,21 +334,23 @@ export default function PlanBuilder() {
   // ── LIST VIEW ─────────────────────────────────────────────────────────────
   if (!selectedPlanId) return (
     <div className="flex flex-col h-full">
-      <div className="px-8 pt-8 pb-5">
-        <div className="flex items-start justify-between mb-1">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm shrink-0">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Plan Templates</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Plan Templates</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Build reusable curriculum templates. Assign to programs when enrolling interns.
             </p>
           </div>
-          <Button onClick={() => { setEditingPlan(null); setPlanForm({ name: "" }); setPlanDialog(true) }}>
-            <Plus className="h-4 w-4" /> New Plan
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => { setEditingPlan(null); setPlanForm({ name: "" }); setPlanDialog(true) }}>
+              <Plus className="h-4 w-4" /> New Plan
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-8">
+      <div className="flex-1 overflow-y-auto px-8 pb-8 pt-5">
         {loading ? (
           <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
         ) : plans.length === 0 ? (

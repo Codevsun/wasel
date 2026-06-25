@@ -162,8 +162,17 @@ export default function InternCheckIn() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-start p-6 gap-8">
-      {/* Header */}
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Check-In</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Mark your attendance for today</p>
+          </div>
+        </div>
+      </div>
+    <div className="flex flex-col items-center justify-start p-6 gap-8">
+      {/* Clock */}
       <div className="w-full max-w-md text-center pt-6">
         <p className="text-muted-foreground text-sm">{format(now, "EEEE, MMMM d")}</p>
         <p className="text-4xl font-bold font-mono tabular-nums mt-1">{format(now, "hh:mm:ss a")}</p>
@@ -299,6 +308,7 @@ export default function InternCheckIn() {
           <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-400/60 inline-block" /> Absent</span>
         </div>
       </div>
+    </div>
     </div>
   )
 }

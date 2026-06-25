@@ -5,7 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext"
 import {
   LayoutDashboard, Users, BookOpen, ClipboardList, Bell,
   LogOut, Moon, Sun, Menu, X, ChevronDown, Award, MessageSquare,
-  BarChart2, FileText, UserPlus, Layers, Settings, Library, CalendarCheck,
+  BarChart2, FileText, UserPlus, Layers, Library, CalendarCheck, Briefcase,
 } from "lucide-react"
 import Logo from "./Logo"
 import { Button } from "../ui/button"
@@ -32,6 +32,7 @@ const trainerNav = [
 const internNav = [
   { label: "Home", icon: LayoutDashboard, href: "/intern" },
   { label: "My Plan", icon: BookOpen, href: "/intern/plan" },
+  { label: "My Tasks", icon: Briefcase, href: "/intern/my-tasks" },
   { label: "Check In", icon: CalendarCheck, href: "/intern/checkin" },
   { label: "Discussions", icon: MessageSquare, href: "/intern/discussions" },
   { label: "Achievements", icon: Award, href: "/intern/achievements" },
@@ -44,6 +45,11 @@ const managementNav = [
 
 const navByRole = { trainer: trainerNav, intern: internNav, management: managementNav }
 const roleLabels = { trainer: "Trainer", intern: "Intern", management: "Management" }
+const roleColors = {
+  trainer: "from-violet-500 to-indigo-600",
+  intern: "from-blue-500 to-indigo-600",
+  management: "from-emerald-500 to-teal-600",
+}
 
 
 export default function AppShell({ children }) {
@@ -59,6 +65,8 @@ export default function AppShell({ children }) {
     ? userDoc.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() || "?"
 
+  const avatarGradient = roleColors[role] || "from-violet-500 to-indigo-600"
+
   const handleLogout = async () => {
     await logout()
     navigate("/login")
@@ -69,28 +77,27 @@ export default function AppShell({ children }) {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 w-60 flex flex-col transition-transform duration-300 lg:relative lg:translate-x-0",
-        "bg-card border-r border-border",
+        "fixed inset-y-0 left-0 z-30 w-64 flex flex-col transition-transform duration-300 lg:relative lg:translate-x-0",
+        "bg-sidebar text-sidebar-foreground",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-          <Logo className="h-9 w-9 rounded-xl" />
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm leading-tight">Wasel</p>
-            <p className="text-xs text-muted-foreground leading-tight">وصل</p>
+        <div className="flex items-center gap-3 px-5 py-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl overflow-hidden">
+            <Logo className="h-14 w-14 object-cover" />
           </div>
+          <div className="flex-1" />
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-md h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+            className="lg:hidden rounded-md h-7 w-7 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -99,13 +106,17 @@ export default function AppShell({ children }) {
 
         {/* User mini-card */}
         <div className="px-3 pt-3 pb-1">
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-primary/6 border border-primary/10">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background text-xs font-bold">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-sidebar-accent border border-sidebar-border">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-border text-sidebar-accent-foreground text-xs font-bold">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold truncate leading-tight">{userDoc?.name || user?.email}</p>
-              <p className="text-xs text-muted-foreground capitalize leading-tight">{roleLabels[role] || "User"}</p>
+              <p className="text-xs font-semibold truncate leading-tight text-sidebar-accent-foreground">
+                {userDoc?.name || user?.email}
+              </p>
+              <p className="text-xs text-sidebar-foreground/50 capitalize leading-tight">
+                {roleLabels[role] || "User"}
+              </p>
             </div>
           </div>
         </div>
@@ -126,7 +137,7 @@ export default function AppShell({ children }) {
                     onClick={() => { setCreateAccountOpen(true); setSidebarOpen(false) }}
                     className={cn(
                       "w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium transition-all",
-                      "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     <item.icon className="h-4 w-4 shrink-0" />
@@ -143,11 +154,11 @@ export default function AppShell({ children }) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      ? "bg-sidebar-primary/15 text-sidebar-primary"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
-                  <item.icon className={cn("h-4 w-4 shrink-0", active && "text-primary")} />
+                  <item.icon className={cn("h-4 w-4 shrink-0", active && "text-sidebar-primary")} />
                   <span className="flex-1">{item.label}</span>
                   {item.badge && (
                     <Badge className="h-5 px-1.5 text-xs" variant="destructive">3</Badge>
@@ -159,10 +170,10 @@ export default function AppShell({ children }) {
         </ScrollArea>
 
         {/* Bottom */}
-        <div className="border-t border-border p-3 space-y-0.5">
+        <div className="border-t border-sidebar-border p-3 space-y-0.5">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
             onClick={toggleTheme}
           >
             {theme === "dark"
@@ -172,7 +183,7 @@ export default function AppShell({ children }) {
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive transition-all"
+            className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 h-auto text-sm font-medium text-sidebar-foreground/60 hover:bg-destructive/15 hover:text-destructive transition-all"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 shrink-0" />
@@ -184,7 +195,7 @@ export default function AppShell({ children }) {
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex h-14 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-sm px-4 shrink-0">
+        <header className="flex h-14 items-center gap-3 bg-background/95 backdrop-blur-sm px-4 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -199,7 +210,7 @@ export default function AppShell({ children }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 rounded-xl h-9 px-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background text-xs font-bold">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-foreground text-xs font-bold">
                   {initials}
                 </div>
                 <span className="hidden sm:inline text-sm font-medium">

@@ -269,14 +269,18 @@ export default function Achievements() {
   }
 
   return (
-    <div className="p-6 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Achievements</h1>
-        <p className="text-muted-foreground">
-          {earnedBadges.length} of {totalBadges} badges earned
-        </p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Achievements</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {earnedBadges.length} of {totalBadges} badges earned
+            </p>
+          </div>
+        </div>
       </div>
+    <div className="p-6 space-y-8">
 
       {/* Progress to all badges */}
       <Card>
@@ -408,6 +412,7 @@ export default function Achievements() {
           </Card>
         )}
       </div>
+    </div>
     </div>
   )
 }

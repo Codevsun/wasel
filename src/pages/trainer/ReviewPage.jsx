@@ -191,34 +191,36 @@ export default function ReviewPage() {
     submission.status === "approved" || submission.status === "rejected"
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-12 w-12">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{intern?.name || "Unknown Intern"}</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">{intern?.email}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant={STATUS_VARIANT[submission.status] || "outline"} className="capitalize">
+              {submission.status || "pending"}
+            </Badge>
+            {submission.version > 1 && (
+              <Badge variant="secondary">Version {submission.version}</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
       <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate("/trainer/reviews")}>
         <ArrowLeft className="h-4 w-4" />
         Review Queue
       </Button>
-
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-12 w-12">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-xl font-bold">{intern?.name || "Unknown Intern"}</h1>
-            <p className="text-sm text-muted-foreground">{intern?.email}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={STATUS_VARIANT[submission.status] || "outline"} className="capitalize">
-            {submission.status || "pending"}
-          </Badge>
-          {submission.version > 1 && (
-            <Badge variant="secondary">Version {submission.version}</Badge>
-          )}
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Task + Submission */}
@@ -474,6 +476,7 @@ export default function ReviewPage() {
             </Card>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

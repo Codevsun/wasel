@@ -153,15 +153,18 @@ export default function ReviewQueue() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Review Queue</h1>
-          <p className="text-muted-foreground text-sm">
-            {submissions.length} pending submission{submissions.length !== 1 ? "s" : ""} awaiting review
-          </p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Review Queue</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {submissions.length} pending submission{submissions.length !== 1 ? "s" : ""} awaiting review
+            </p>
+          </div>
         </div>
       </div>
+      <div className="p-6 space-y-6">
 
       {/* Filters */}
       <Card>
@@ -326,6 +329,7 @@ export default function ReviewQueue() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

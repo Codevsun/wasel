@@ -322,18 +322,22 @@ export default function Discussions() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Discussions</h1>
-          <p className="text-muted-foreground text-sm">Your cohort's learning conversations</p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Discussions</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Your cohort's learning conversations</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Discussion
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Discussion
-        </Button>
       </div>
+    <div className="p-6 space-y-6">
 
       {/* Content */}
       {loading ? (
@@ -459,6 +463,7 @@ export default function Discussions() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   )
 }

@@ -72,8 +72,7 @@ export default function Login() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <Logo className="h-14 w-14 mb-4" />
-            <h1 className="text-2xl font-bold tracking-tight">Wasel</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">وصل — Internship Portal</p>
+            <p className="text-muted-foreground text-sm">Internship Portal</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

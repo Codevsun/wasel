@@ -211,35 +211,39 @@ export default function InternHome() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Welcome header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Welcome back, {userDoc?.name?.split(" ")[0] || "Intern"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Here's what's on your plate today.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Overall Progress</p>
-            <p className="text-2xl font-bold text-primary">{Math.round(overallPct)}%</p>
+    <div className="min-h-full">
+      {/* Sticky page header */}
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Welcome back, {userDoc?.name?.split(" ")[0] || "Intern"} 👋
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Here's what's on your plate today.
+            </p>
           </div>
-          <div className="relative h-14 w-14">
-            <svg viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-              <circle
-                cx="18" cy="18" r="15.9" fill="none"
-                stroke="hsl(var(--primary))" strokeWidth="3"
-                strokeDasharray={`${overallPct} ${100 - overallPct}`}
-                strokeLinecap="round"
-              />
-            </svg>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Overall Progress</p>
+              <p className="text-2xl font-bold text-primary">{Math.round(overallPct)}%</p>
+            </div>
+            <div className="relative h-14 w-14">
+              <svg viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                <circle
+                  cx="18" cy="18" r="15.9" fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="3"
+                  strokeDasharray={`${overallPct} ${100 - overallPct}`}
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
+
+      <div className="p-6 space-y-6">
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -487,6 +491,8 @@ export default function InternHome() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
       </div>
     </div>
   )

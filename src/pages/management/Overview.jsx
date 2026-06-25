@@ -208,12 +208,16 @@ export default function ManagementOverview() {
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Management Overview</h1>
-        <p className="text-muted-foreground">Program-wide metrics and insights</p>
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Management Overview</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Program-wide metrics and insights</p>
+          </div>
+        </div>
       </div>
+    <div className="p-6 space-y-6">
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -374,6 +378,7 @@ export default function ManagementOverview() {
           </CardContent>
         </Card>
       )}
+    </div>
     </div>
   )
 }

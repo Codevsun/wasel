@@ -479,60 +479,60 @@ export default function InternDetail() {
   const trainerClosedMilestones = new Set(progress?.trainer_closed_milestones || [])
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Back + Header */}
-      <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate("/trainer/interns")}>
-        <ArrowLeft className="h-4 w-4" />
-        Intern Queue
-      </Button>
-
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold">{intern.name}</h1>
-              {isAtRisk && (
-                <Badge variant="destructive" className="gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  At Risk
+    <div className="min-h-full">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight">{intern.name}</h1>
+                {isAtRisk && (
+                  <Badge variant="destructive" className="gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    At Risk
+                  </Badge>
+                )}
+                <Badge
+                  variant={
+                    intern.status === "active" ? "success" :
+                    intern.status === "graduated" ? "default" :
+                    intern.status === "withdrawn" ? "destructive" : "secondary"
+                  }
+                  className="capitalize"
+                >
+                  {intern.status || "unknown"}
                 </Badge>
-              )}
-              <Badge
-                variant={
-                  intern.status === "active" ? "success" :
-                  intern.status === "graduated" ? "default" :
-                  intern.status === "withdrawn" ? "destructive" : "secondary"
-                }
-                className="capitalize"
-              >
-                {intern.status || "unknown"}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1 text-muted-foreground mt-1">
-              <Mail className="h-3.5 w-3.5" />
-              <span className="text-sm">{intern.email}</span>
-            </div>
-            <div className="flex gap-2 mt-1.5 flex-wrap text-sm text-muted-foreground">
-              {cohortNames.length > 0 && (
-                <span>Cohort: <span className="text-foreground font-medium">{cohortNames.join(", ")}</span></span>
-              )}
-              {groupNames.length > 0 && (
-                <span>· Group: <span className="text-foreground font-medium">{groupNames.join(", ")}</span></span>
-              )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">{intern.email}</p>
+              <div className="flex gap-2 mt-1 flex-wrap text-sm text-muted-foreground">
+                {cohortNames.length > 0 && (
+                  <span>Cohort: <span className="text-foreground font-medium">{cohortNames.join(", ")}</span></span>
+                )}
+                {groupNames.length > 0 && (
+                  <span>· Group: <span className="text-foreground font-medium">{groupNames.join(", ")}</span></span>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/trainer/interns")}>
+              <ArrowLeft className="h-4 w-4" />
+              Intern Queue
+            </Button>
+            <Button variant="outline" onClick={() => setReassignOpen(true)}>
+              <RefreshCw className="h-4 w-4" />
+              Reassign
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={() => setReassignOpen(true)}>
-          <RefreshCw className="h-4 w-4" />
-          Reassign
-        </Button>
       </div>
 
+      <div className="p-6 space-y-6">
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full sm:w-auto">
@@ -1513,6 +1513,7 @@ export default function InternDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

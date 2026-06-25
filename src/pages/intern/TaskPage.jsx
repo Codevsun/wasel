@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
+import ReactConfetti from "react-confetti"
 import { useParams, useNavigate } from "react-router-dom"
 import {
   doc, getDoc, getDocs, query, collection, where,
@@ -18,7 +19,7 @@ import { cn } from "../../lib/utils"
 import {
   CheckCircle2, Clock, AlertCircle, ArrowLeft, BookOpen,
   FlaskConical, HelpCircle, Upload, ExternalLink, MessageSquare,
-  RefreshCw,
+  RefreshCw, Briefcase,
 } from "lucide-react"
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -93,6 +94,15 @@ export default function TaskPage() {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  const [showConfetti, setShowConfetti] = useState(false)
+
+  useEffect(() => {
+    if (!success) return
+    setShowConfetti(true)
+    const t = setTimeout(() => setShowConfetti(false), 5000)
+    return () => clearTimeout(t)
+  }, [success])
 
   // form state
   const [linkValue, setLinkValue] = useState("")
@@ -240,7 +250,10 @@ export default function TaskPage() {
     )
   }
 
-  const typeConfig = TYPE_CONFIG[task.type] || TYPE_CONFIG.reading
+  const isProject = task.is_assigned && !task.is_quick
+  const typeConfig = isProject
+    ? { icon: Briefcase, label: "Project", variant: "default", color: "text-primary" }
+    : (TYPE_CONFIG[task.type] || TYPE_CONFIG.reading)
   const TypeIcon = typeConfig.icon
   const isCompleted = outcome?.status === "passed" || outcome?.status === "approved"
   const isFailed = outcome?.status === "failed"
@@ -250,6 +263,16 @@ export default function TaskPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {showConfetti && (
+        <ReactConfetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={350}
+          colors={["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd", "#e0e7ff", "#ffffff"]}
+          style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
+        />
+      )}
       {/* Back */}
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" />
