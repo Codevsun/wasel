@@ -128,5 +128,12 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isTrainer();
     }
+
+    // ── config ────────────────────────────────────────────────────
+    // write: trainer only | read: all signed-in (interns need track/label options)
+    match /config/{docId} {
+      allow read:  if isSignedIn();
+      allow write: if isTrainer();
+    }
   }
 }

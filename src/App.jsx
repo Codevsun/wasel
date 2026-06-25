@@ -14,6 +14,7 @@ import PlanBuilder from "./pages/trainer/PlanBuilder"
 import ReviewQueue from "./pages/trainer/ReviewQueue"
 import ReviewPage from "./pages/trainer/ReviewPage"
 import Announcements from "./pages/trainer/Announcements"
+import TrainerSettings from "./pages/trainer/Settings"
 
 // Intern pages
 import InternHome from "./pages/intern/Home"
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/trainer/reviews" element={<TrainerLayout><ReviewQueue /></TrainerLayout>} />
             <Route path="/trainer/reviews/:submissionId" element={<TrainerLayout><ReviewPage /></TrainerLayout>} />
             <Route path="/trainer/announcements" element={<TrainerLayout><Announcements /></TrainerLayout>} />
+            <Route path="/trainer/settings" element={<TrainerLayout><TrainerSettings /></TrainerLayout>} />
 
             {/* Intern routes */}
             <Route path="/intern" element={<InternLayout><InternHome /></InternLayout>} />
