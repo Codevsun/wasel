@@ -27,7 +27,7 @@ import {
 import {
   ArrowLeft, Mail, CheckCircle2, XCircle, Clock, AlertTriangle,
   FileText, Link2, BarChart2, BookOpen, MessageSquare, ChevronRight,
-  Save, RefreshCw, Lock, Plus, Trash2,
+  Save, RefreshCw, Lock, Plus, Trash2, TrendingUp, Layers,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -356,38 +356,60 @@ export default function InternDetail() {
 
         {/* Overview */}
         <TabsContent value="overview" className="space-y-4 mt-4">
+
+          {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground">Overall Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold mb-2">
+            <Card className="relative overflow-hidden">
+              <CardContent className="pt-5 pb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Overall</span>
+                </div>
+                <div className={cn(
+                  "text-3xl font-bold tracking-tight mb-2.5",
+                  progress && (progress.overall_pct ?? 0) < 30 ? "text-red-500" :
+                  progress && (progress.overall_pct ?? 0) >= 70 ? "text-green-500" : ""
+                )}>
                   {progress ? `${Math.round(progress.overall_pct ?? 0)}%` : "—"}
                 </div>
-                {progress && <Progress value={progress.overall_pct ?? 0} className="h-2" />}
+                {progress && (
+                  <Progress
+                    value={progress.overall_pct ?? 0}
+                    className={cn("h-1.5", (progress.overall_pct ?? 0) < 30 && "[&>div]:bg-red-500", (progress.overall_pct ?? 0) >= 70 && "[&>div]:bg-green-500")}
+                  />
+                )}
               </CardContent>
             </Card>
+
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground">Tasks Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
+              <CardContent className="pt-5 pb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10">
+                    <CheckCircle2 className="h-4.5 w-4.5 text-green-500" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Tasks</span>
+                </div>
+                <div className="text-3xl font-bold tracking-tight">
                   {(progress?.completed_tasks || []).length}
                 </div>
-                <p className="text-xs text-muted-foreground">tasks done</p>
+                <p className="text-xs text-muted-foreground mt-0.5">completed</p>
               </CardContent>
             </Card>
+
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground">Track Preferences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-1">
+              <CardContent className="pt-5 pb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                    <Layers className="h-4.5 w-4.5 text-blue-500" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Tracks</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1">
                   {(intern.track_preference || []).length > 0
                     ? intern.track_preference.map((t) => (
-                        <Badge key={t} variant="outline" className="capitalize text-xs">{t}</Badge>
+                        <Badge key={t} variant="secondary" className="capitalize text-xs">{t}</Badge>
                       ))
                     : <span className="text-sm text-muted-foreground">None set</span>
                   }
@@ -399,85 +421,109 @@ export default function InternDetail() {
           {/* Notes */}
           {notes.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Notes</CardTitle>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setActiveTab("notes")}>
-                    <Plus className="h-3.5 w-3.5" /> Add note
+                  <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setActiveTab("notes")}>
+                    <Plus className="h-3 w-3" /> Add
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {notes.map((n, i) => (
-                  <div key={n.id}>
-                    {i > 0 && <Separator className="mb-3" />}
-                    <p className="text-sm whitespace-pre-wrap">{n.text}</p>
-                    {n.created_at && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(n.created_at).toLocaleString("en-US", {
-                          year: "numeric", month: "short", day: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </p>
-                    )}
-                  </div>
-                ))}
+              <CardContent className="pt-0">
+                <div className="space-y-0">
+                  {notes.map((n, i) => (
+                    <div key={n.id} className={cn("flex gap-3 py-3", i < notes.length - 1 && "border-b border-border")}>
+                      <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{n.text}</p>
+                        {n.created_at && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(n.created_at).toLocaleString("en-US", {
+                              month: "short", day: "numeric", year: "numeric",
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Track Progress Bars */}
+          {/* Track Progress */}
           {Object.keys(trackPct).length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Progress by Track</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Progress by Track</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {Object.entries(trackPct).map(([trackId, pct]) => (
                   <div key={trackId}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{trackLabels[trackId] || "Track"}</span>
-                      <span className="text-muted-foreground">{Math.round(pct)}%</span>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm font-medium capitalize">{trackLabels[trackId] || "Track"}</span>
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        pct < 30 ? "text-red-500" : pct >= 70 ? "text-green-500" : "text-muted-foreground"
+                      )}>{Math.round(pct)}%</span>
                     </div>
-                    <Progress value={pct} className="h-2" />
+                    <Progress
+                      value={pct}
+                      className={cn("h-1.5", pct < 30 && "[&>div]:bg-red-500", pct >= 70 && "[&>div]:bg-green-500")}
+                    />
                   </div>
                 ))}
               </CardContent>
             </Card>
           )}
 
-          {/* Milestone Status */}
+          {/* Milestone Timeline */}
           {progress?.milestone_status && Object.keys(progress.milestone_status).length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Milestone Timeline</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Milestones</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="pt-0">
+                <div className="space-y-0">
                   {Object.entries(progress.milestone_status)
                     .sort(([a], [b]) =>
                       (milestoneLabels[a]?.week_number ?? 0) - (milestoneLabels[b]?.week_number ?? 0)
                     )
-                    .map(([milestoneId, status]) => (
-                    <div key={milestoneId} className="flex items-center gap-3">
-                      {status === "completed" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                      ) : status === "in_progress" ? (
-                        <Clock className="h-4 w-4 text-amber-500 shrink-0" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border-2 border-muted shrink-0" />
-                      )}
-                      <span className="text-sm">
-                        {milestoneLabels[milestoneId]?.title ?? "Milestone"}
-                      </span>
-                      {trainerClosedMilestones.has(milestoneId) && (
-                        <Badge variant="secondary" className="text-xs">Closed by Trainer</Badge>
-                      )}
-                      <div className="ml-auto flex items-center gap-2">
+                    .map(([milestoneId, status], i, arr) => (
+                    <div key={milestoneId} className={cn(
+                      "flex items-center gap-3 py-3",
+                      i < arr.length - 1 && "border-b border-border"
+                    )}>
+                      <div className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+                        status === "completed" ? "bg-green-500/10" :
+                        status === "in_progress" ? "bg-amber-500/10" : "bg-muted"
+                      )}>
+                        {status === "completed" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : status === "in_progress" ? (
+                          <Clock className="h-4 w-4 text-amber-500" />
+                        ) : (
+                          <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">
+                          {milestoneLabels[milestoneId]?.title ?? "Milestone"}
+                        </span>
+                        {milestoneLabels[milestoneId]?.week_number && (
+                          <span className="text-xs text-muted-foreground ml-2">Week {milestoneLabels[milestoneId].week_number}</span>
+                        )}
+                        {trainerClosedMilestones.has(milestoneId) && (
+                          <Badge variant="secondary" className="ml-2 text-xs">Trainer closed</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
                         {status !== "completed" && (
                           <Button
                             size="sm"
-                            variant={closingMilestoneId === milestoneId ? "destructive" : "outline"}
+                            variant={closingMilestoneId === milestoneId ? "destructive" : "ghost"}
                             className="h-7 text-xs"
                             disabled={forceClosing}
                             onClick={() => handleForceCloseMilestone(milestoneId)}
