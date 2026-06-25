@@ -16,9 +16,11 @@ import ReviewPage from "./pages/trainer/ReviewPage"
 import Announcements from "./pages/trainer/Announcements"
 import TrainerSettings from "./pages/trainer/Settings"
 import TaskLibrary from "./pages/trainer/TaskLibrary"
+import TrainerAttendance from "./pages/trainer/Attendance"
 
 // Intern pages
 import InternHome from "./pages/intern/Home"
+import InternCheckIn from "./pages/intern/CheckIn"
 import MyPlan from "./pages/intern/MyPlan"
 import TaskPage from "./pages/intern/TaskPage"
 import QuizPage from "./pages/intern/QuizPage"
@@ -84,9 +86,11 @@ export default function App() {
             <Route path="/trainer/announcements" element={<TrainerLayout><Announcements /></TrainerLayout>} />
             <Route path="/trainer/settings" element={<TrainerLayout><TaskLibrary /></TrainerLayout>} />
             <Route path="/trainer/task-library" element={<TrainerLayout><TaskLibrary /></TrainerLayout>} />
+            <Route path="/trainer/attendance" element={<TrainerLayout><TrainerAttendance /></TrainerLayout>} />
 
             {/* Intern routes */}
             <Route path="/intern" element={<InternLayout><InternHome /></InternLayout>} />
+            <Route path="/intern/checkin" element={<InternLayout><InternCheckIn /></InternLayout>} />
             <Route path="/intern/plan" element={<InternLayout><MyPlan /></InternLayout>} />
             <Route path="/intern/plan/task/:taskId" element={<InternLayout><TaskPage /></InternLayout>} />
             <Route path="/intern/tasks/:taskId" element={<InternLayout><TaskPage /></InternLayout>} />

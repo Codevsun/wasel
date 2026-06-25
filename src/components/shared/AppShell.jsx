@@ -5,7 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext"
 import {
   LayoutDashboard, Users, BookOpen, ClipboardList, Bell,
   LogOut, Moon, Sun, Menu, X, ChevronDown, Award, MessageSquare,
-  BarChart2, FileText, UserPlus, Layers, Settings, Library
+  BarChart2, FileText, UserPlus, Layers, Settings, Library, CalendarCheck,
 } from "lucide-react"
 import Logo from "./Logo"
 import { Button } from "../ui/button"
@@ -24,6 +24,7 @@ const trainerNav = [
   { label: "Programs", icon: Layers, href: "/trainer/cohorts" },
   { label: "Plan Templates", icon: BookOpen, href: "/trainer/plans" },
   { label: "Review Queue", icon: ClipboardList, href: "/trainer/reviews", badge: true },
+  { label: "Attendance", icon: CalendarCheck, href: "/trainer/attendance" },
   { label: "Announcements", icon: Bell, href: "/trainer/announcements" },
   { label: "Library & Settings", icon: Library, href: "/trainer/task-library" },
 ]
@@ -31,6 +32,7 @@ const trainerNav = [
 const internNav = [
   { label: "Home", icon: LayoutDashboard, href: "/intern" },
   { label: "My Plan", icon: BookOpen, href: "/intern/plan" },
+  { label: "Check In", icon: CalendarCheck, href: "/intern/checkin" },
   { label: "Discussions", icon: MessageSquare, href: "/intern/discussions" },
   { label: "Achievements", icon: Award, href: "/intern/achievements" },
 ]

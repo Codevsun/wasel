@@ -142,5 +142,16 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isTrainer();
     }
+
+    // ── attendance ────────────────────────────────────────────────
+    // Trainers can read/write all. Interns can read own + write own (check-in/out).
+    match /attendance/{recordId} {
+      allow read:  if isTrainer() ||
+                      (isIntern() && resource.data.user_id == request.auth.uid);
+      allow create: if isTrainer() ||
+                      (isIntern() && request.resource.data.user_id == request.auth.uid);
+      allow update: if isTrainer() ||
+                      (isIntern() && resource.data.user_id == request.auth.uid);
+    }
   }
 }
