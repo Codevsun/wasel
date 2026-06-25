@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "seed:trainer": "node scripts/seed-trainer.js",
-    "deploy:firebase": "firebase deploy --only functions,firestore"
+    "deploy:firebase": "firebase deploy --only functions,firestore,firestore:rules",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

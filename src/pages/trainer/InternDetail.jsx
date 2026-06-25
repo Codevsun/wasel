@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
   doc, getDoc, onSnapshot, collection, query, where,
-  getDocs, updateDoc, orderBy,
+  getDocs, updateDoc, orderBy, addDoc, serverTimestamp, deleteDoc,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
@@ -30,6 +30,7 @@ import {
   ArrowLeft, Mail, CheckCircle2, XCircle, Clock, AlertTriangle,
   FileText, Link2, BarChart2, BookOpen, MessageSquare, ChevronRight,
   Save, RefreshCw, Lock, Plus, Trash2, TrendingUp, Layers, X, Pencil, Tag,
+  FolderOpen, CalendarDays, FlaskConical, Upload, ExternalLink,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 
@@ -104,6 +105,24 @@ export default function InternDetail() {
   const [labelInput, setLabelInput] = useState("")
   const [editingLabels, setEditingLabels] = useState(false)
 
+  // Assigned tasks (quick + full projects)
+  const [assignedProjects, setAssignedProjects] = useState([])
+  const [projectOutcomes, setProjectOutcomes] = useState({})
+  const [projectSubmissions, setProjectSubmissions] = useState({})
+
+  // Quick task inline add
+  const [quickTaskInput, setQuickTaskInput] = useState("")
+  const [quickTaskType, setQuickTaskType] = useState("reading")
+  const [addingQuickTask, setAddingQuickTask] = useState(false)
+
+  // Full project assign dialog
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [assignDialogTab, setAssignDialogTab] = useState("library")
+  const [assignForm, setAssignForm] = useState({ title: "", content: "", type: "submission", dueDate: "" })
+  const [assigning, setAssigning] = useState(false)
+  const [taskTemplates, setTaskTemplates] = useState([])
+  const [templateSearch, setTemplateSearch] = useState("")
+
   // Config from Firestore (tracks & labels defined in Settings)
   const [configTracks, setConfigTracks] = useState(DEFAULT_TRACKS)
   const [configLabels, setConfigLabels] = useState(DEFAULT_LABELS)
@@ -114,6 +133,53 @@ export default function InternDetail() {
       setConfigLabels(cfg.labels)
     })
   }, [])
+
+  // Task templates from library
+  useEffect(() => {
+    const q = query(collection(db, "task_templates"), orderBy("created_at", "desc"))
+    return onSnapshot(q, (snap) => {
+      setTaskTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    }, console.error)
+  }, [])
+
+  // Assigned projects: tasks where assigned_to == uid
+  useEffect(() => {
+    const q = query(collection(db, "tasks"), where("assigned_to", "==", uid))
+    const unsub = onSnapshot(q, async (snap) => {
+      const projects = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.created_at?.seconds ?? 0) - (a.created_at?.seconds ?? 0))
+      setAssignedProjects(projects)
+
+      if (!projects.length) return
+
+      const ids = projects.map((p) => p.id)
+      // outcomes
+      const outcomeSnap = await getDocs(query(
+        collection(db, "outcomes"),
+        where("user_id", "==", uid),
+        where("task_id", "in", ids)
+      ))
+      const oMap = {}
+      outcomeSnap.docs.forEach((d) => { oMap[d.data().task_id] = d.data() })
+      setProjectOutcomes(oMap)
+
+      // latest submissions
+      const subSnap = await getDocs(query(
+        collection(db, "submissions"),
+        where("user_id", "==", uid),
+        where("task_id", "in", ids)
+      ))
+      const sMap = {}
+      subSnap.docs.forEach((d) => {
+        const data = d.data()
+        if (!sMap[data.task_id] || (data.version ?? 1) > (sMap[data.task_id].version ?? 1)) {
+          sMap[data.task_id] = { id: d.id, ...data }
+        }
+      })
+      setProjectSubmissions(sMap)
+    }, console.error)
+    return unsub
+  }, [uid])
 
   useEffect(() => {
     if (!closingMilestoneId) return
@@ -279,6 +345,61 @@ export default function InternDetail() {
     }
   }
 
+  const handleAddQuickTask = async () => {
+    if (!quickTaskInput.trim()) return
+    setAddingQuickTask(true)
+    try {
+      await addDoc(collection(db, "tasks"), {
+        title: quickTaskInput.trim(),
+        content: "",
+        type: quickTaskType,
+        assigned_to: uid,
+        assigned_by: authUser?.uid || null,
+        is_quick: true,
+        is_assigned: true,
+        created_at: serverTimestamp(),
+      })
+      setQuickTaskInput("")
+    } catch (err) {
+      console.error(err)
+      alert("Failed to add quick task: " + err.message)
+    } finally {
+      setAddingQuickTask(false)
+    }
+  }
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteDoc(doc(db, "tasks", taskId))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleAssignProject = async () => {
+    if (!assignForm.title.trim()) return
+    setAssigning(true)
+    try {
+      await addDoc(collection(db, "tasks"), {
+        title: assignForm.title.trim(),
+        content: assignForm.content.trim(),
+        type: assignForm.type,
+        assigned_to: uid,
+        assigned_by: authUser?.uid || null,
+        due_date: assignForm.dueDate || null,
+        is_assigned: true,
+        created_at: serverTimestamp(),
+      })
+      setAssignForm({ title: "", content: "", type: "submission", dueDate: "" })
+      setAssignDialogOpen(false)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to assign project: " + err.message)
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   const startEditingTracks = () => {
     setLocalTracks([...(intern?.track_preference || [])])
     setEditingTracks(true)
@@ -424,6 +545,12 @@ export default function InternDetail() {
           </TabsTrigger>
           <TabsTrigger value="quiz">Quiz Results</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="projects">
+            Projects
+            {assignedProjects.filter(p => !p.is_quick).length > 0 && (
+              <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-xs">{assignedProjects.filter(p => !p.is_quick).length}</Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -559,6 +686,98 @@ export default function InternDetail() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Quick Tasks */}
+          {(() => {
+            const quickTasks = assignedProjects.filter((p) => p.is_quick)
+            const typeIcon = { reading: BookOpen, lab: FlaskConical, submission: Upload }
+            const typeColor = { reading: "text-blue-500 bg-blue-500/10", lab: "text-purple-500 bg-purple-500/10", submission: "text-green-500 bg-green-500/10" }
+
+            return (
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                      <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
+                    </div>
+                    <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Quick Tasks
+                    </CardTitle>
+                    {quickTasks.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">{quickTasks.length}</Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  {/* Inline add row */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a quick task..."
+                      value={quickTaskInput}
+                      onChange={(e) => setQuickTaskInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAddQuickTask() }}
+                      className="h-8 text-sm flex-1"
+                    />
+                    <Select value={quickTaskType} onValueChange={setQuickTaskType}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="reading">Reading</SelectItem>
+                        <SelectItem value="lab">Lab</SelectItem>
+                        <SelectItem value="submission">Submission</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="h-8 px-3 shrink-0"
+                      onClick={handleAddQuickTask}
+                      disabled={addingQuickTask || !quickTaskInput.trim()}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  {/* Quick task list */}
+                  {quickTasks.length > 0 && (
+                    <div className="divide-y divide-border">
+                      {quickTasks.map((task) => {
+                        const outcome = projectOutcomes[task.id]
+                        const status = outcome?.status || "not_started"
+                        const isDone = status === "passed" || status === "approved"
+                        const isSubmitted = status === "submitted"
+                        const Icon = typeIcon[task.type] || BookOpen
+                        const colors = (typeColor[task.type] || "text-muted-foreground bg-muted").split(" ")
+
+                        return (
+                          <div key={task.id} className="flex items-center gap-2.5 py-2">
+                            <div className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", colors[1])}>
+                              <Icon className={cn("h-3 w-3", colors[0])} />
+                            </div>
+                            <span className={cn("flex-1 text-sm truncate", isDone && "line-through text-muted-foreground")}>
+                              {task.title}
+                            </span>
+                            {isDone && <Badge variant="success" className="text-xs shrink-0">Done</Badge>}
+                            {isSubmitted && <Badge variant="secondary" className="text-xs shrink-0">Submitted</Badge>}
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {quickTasks.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Type a task above and press Enter to assign it instantly.</p>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })()}
 
           {/* Trainer Labels */}
           <Card>
@@ -981,7 +1200,266 @@ export default function InternDetail() {
             </Card>
           )}
         </TabsContent>
+
+        {/* Projects */}
+        <TabsContent value="projects" className="mt-4 space-y-4">
+          {(() => {
+            const fullProjects = assignedProjects.filter((p) => !p.is_quick)
+            return (<>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {fullProjects.length === 0 ? "No projects assigned yet." : `${fullProjects.length} project${fullProjects.length !== 1 ? "s" : ""} assigned`}
+            </p>
+            <Button size="sm" onClick={() => setAssignDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Assign Project
+            </Button>
+          </div>
+
+          {fullProjects.length > 0 && (
+            <Card>
+              <CardContent className="pt-4 divide-y divide-border space-y-0">
+                {fullProjects.map((project) => {
+                  const outcome = projectOutcomes[project.id]
+                  const submission = projectSubmissions[project.id]
+                  const status = outcome?.status || "not_started"
+
+                  const statusConfig = {
+                    not_started: { label: "Not Started", variant: "outline" },
+                    in_progress: { label: "In Progress", variant: "warning" },
+                    submitted: { label: "Submitted", variant: "secondary" },
+                    passed: { label: "Approved", variant: "success" },
+                    approved: { label: "Approved", variant: "success" },
+                    failed: { label: "Rejected", variant: "destructive" },
+                  }[status] || { label: status, variant: "outline" }
+
+                  const typeConfig = {
+                    submission: { icon: Upload, label: "Submission" },
+                    lab: { icon: FlaskConical, label: "Lab" },
+                    reading: { icon: BookOpen, label: "Reading" },
+                  }[project.type] || { icon: FileText, label: project.type }
+                  const TypeIcon = typeConfig.icon
+
+                  return (
+                    <div key={project.id} className="py-3 flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">{project.title}</span>
+                          <Badge variant="outline" className="text-xs">{typeConfig.label}</Badge>
+                          <Badge variant={statusConfig.variant} className="text-xs">{statusConfig.label}</Badge>
+                        </div>
+                        {project.content && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.content}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-1">
+                          {project.due_date && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <CalendarDays className="h-3 w-3" />
+                              Due {new Date(project.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {project.created_at && (
+                            <span className="text-xs text-muted-foreground">
+                              Assigned {formatDate(project.created_at)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {submission && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs shrink-0"
+                          onClick={() => navigate(`/trainer/reviews/${submission.id}`)}
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
+                          Review
+                        </Button>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+          </>)
+          })()}
+        </TabsContent>
       </Tabs>
+
+      {/* Assign Task / Project Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={(open) => {
+        setAssignDialogOpen(open)
+        if (!open) { setTemplateSearch(""); setAssignDialogTab("library") }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign to {intern.name}</DialogTitle>
+            <DialogDescription>Pick from your library or create a custom task.</DialogDescription>
+          </DialogHeader>
+
+          {/* Tab switcher */}
+          <div className="flex gap-1 rounded-lg bg-muted p-1">
+            {[["library", "From Library"], ["custom", "Custom"]].map(([tab, label]) => (
+              <button
+                key={tab}
+                onClick={() => setAssignDialogTab(tab)}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                  assignDialogTab === tab
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Library tab */}
+          {assignDialogTab === "library" && (
+            <div className="space-y-3">
+              <Input
+                placeholder="Search tasks and projects..."
+                value={templateSearch}
+                onChange={(e) => setTemplateSearch(e.target.value)}
+                className="h-8 text-sm"
+              />
+              {taskTemplates.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                  <FolderOpen className="h-6 w-6 mx-auto mb-2 opacity-40" />
+                  <p>Your library is empty.</p>
+                  <button
+                    className="text-primary underline underline-offset-2 mt-1 text-xs"
+                    onClick={() => navigate("/trainer/task-library")}
+                  >
+                    Go to Task Library to add templates
+                  </button>
+                </div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto space-y-1 -mx-1 px-1">
+                  {(() => {
+                    const q = templateSearch.toLowerCase()
+                    const filtered = taskTemplates.filter(
+                      (t) => !q || t.title.toLowerCase().includes(q) || (t.content || "").toLowerCase().includes(q)
+                    )
+                    const quick   = filtered.filter((t) => t.category === "quick_task")
+                    const projects = filtered.filter((t) => t.category === "project")
+
+                    const renderGroup = (label, items) => items.length === 0 ? null : (
+                      <div key={label}>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 py-1">{label}</p>
+                        {items.map((t) => {
+                          const meta = { submission: { icon: Upload, color: "text-green-500", bg: "bg-green-500/10" }, lab: { icon: FlaskConical, color: "text-purple-500", bg: "bg-purple-500/10" }, reading: { icon: BookOpen, color: "text-blue-500", bg: "bg-blue-500/10" } }[t.type] || { icon: FileText, color: "text-muted-foreground", bg: "bg-muted" }
+                          const Icon = meta.icon
+                          return (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                setAssignForm((f) => ({ ...f, title: t.title, content: t.content || "", type: t.type }))
+                                setAssignDialogTab("custom")
+                              }}
+                              className="w-full flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-accent transition-colors text-left group"
+                            >
+                              <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", meta.bg)}>
+                                <Icon className={cn("h-3.5 w-3.5", meta.color)} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{t.title}</p>
+                                {t.content && <p className="text-xs text-muted-foreground line-clamp-1">{t.content}</p>}
+                              </div>
+                              {t.estimated_duration && (
+                                <span className="text-xs text-muted-foreground shrink-0">{t.estimated_duration}</span>
+                              )}
+                              <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )
+
+                    return filtered.length === 0
+                      ? <p className="text-sm text-muted-foreground text-center py-6">No templates match your search.</p>
+                      : [renderGroup("Quick Tasks", quick), renderGroup("Projects", projects)]
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Custom tab */}
+          {assignDialogTab === "custom" && (
+            <div className="space-y-4">
+              {assignForm.title && (
+                <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+                  <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-xs text-primary font-medium flex-1 truncate">From library: {assignForm.title}</span>
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setAssignForm({ title: "", content: "", type: "submission", dueDate: "" })}
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label>Title <span className="text-destructive">*</span></Label>
+                <Input
+                  autoFocus
+                  placeholder="e.g. Build a REST API"
+                  value={assignForm.title}
+                  onChange={(e) => setAssignForm((f) => ({ ...f, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Instructions</Label>
+                <Textarea
+                  placeholder="Describe what the intern needs to do..."
+                  rows={3}
+                  className="resize-none"
+                  value={assignForm.content}
+                  onChange={(e) => setAssignForm((f) => ({ ...f, content: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Type</Label>
+                  <Select value={assignForm.type} onValueChange={(v) => setAssignForm((f) => ({ ...f, type: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="submission">Submission</SelectItem>
+                      <SelectItem value="lab">Lab (URL)</SelectItem>
+                      <SelectItem value="reading">Reading</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Due Date (optional)</Label>
+                  <Input
+                    type="date"
+                    value={assignForm.dueDate}
+                    onChange={(e) => setAssignForm((f) => ({ ...f, dueDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            {assignDialogTab === "custom" && (
+              <Button onClick={handleAssignProject} disabled={assigning || !assignForm.title.trim()}>
+                {assigning ? "Assigning..." : "Assign"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reassign Dialog */}
       <Dialog open={reassignOpen} onOpenChange={setReassignOpen}>

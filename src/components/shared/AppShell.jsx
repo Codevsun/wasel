@@ -5,7 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext"
 import {
   LayoutDashboard, Users, BookOpen, ClipboardList, Bell,
   LogOut, Moon, Sun, Menu, X, ChevronDown, Award, MessageSquare,
-  BarChart2, FileText, UserPlus, Layers, Settings
+  BarChart2, FileText, UserPlus, Layers, Settings, Library
 } from "lucide-react"
 import Logo from "./Logo"
 import { Button } from "../ui/button"
@@ -25,7 +25,7 @@ const trainerNav = [
   { label: "Plan Templates", icon: BookOpen, href: "/trainer/plans" },
   { label: "Review Queue", icon: ClipboardList, href: "/trainer/reviews", badge: true },
   { label: "Announcements", icon: Bell, href: "/trainer/announcements" },
-  { label: "Labels & Tracks", icon: Settings, href: "/trainer/settings" },
+  { label: "Library & Settings", icon: Library, href: "/trainer/task-library" },
 ]
 
 const internNav = [

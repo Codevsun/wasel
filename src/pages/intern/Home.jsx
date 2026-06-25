@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  collection, doc, onSnapshot, query, where, getDocs, orderBy, limit,
+  collection, doc, onSnapshot, query, where, getDocs, orderBy, limit, getDoc,
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
@@ -14,6 +14,7 @@ import { Separator } from "../../components/ui/separator"
 import { cn } from "../../lib/utils"
 import {
   CheckCircle2, Clock, BookOpen, ChevronRight, Bell, Star, TrendingUp, Zap,
+  FolderOpen, Upload, FlaskConical,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
@@ -46,6 +47,9 @@ export default function InternHome() {
 
   const [announcements, setAnnouncements] = useState([])
   const [announcementsLoading, setAnnouncementsLoading] = useState(true)
+
+  const [assignedTasks, setAssignedTasks] = useState([])
+  const [assignedOutcomes, setAssignedOutcomes] = useState({})
 
   const [trackLabels, setTrackLabels] = useState({})
 
@@ -132,6 +136,29 @@ export default function InternHome() {
 
     loadCurrentTasks()
   }, [progressDoc, user?.uid])
+
+  // Assigned tasks (direct from trainer)
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(collection(db, "tasks"), where("assigned_to", "==", user.uid))
+    const unsub = onSnapshot(q, async (snap) => {
+      const tasks = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.created_at?.seconds ?? 0) - (a.created_at?.seconds ?? 0))
+      setAssignedTasks(tasks)
+
+      if (!tasks.length) return
+      const ids = tasks.map((t) => t.id)
+      const outcomeSnap = await getDocs(query(
+        collection(db, "outcomes"),
+        where("user_id", "==", user.uid),
+        where("task_id", "in", ids)
+      ))
+      const map = {}
+      outcomeSnap.docs.forEach((d) => { map[d.data().task_id] = d.data() })
+      setAssignedOutcomes(map)
+    }, console.error)
+    return unsub
+  }, [user?.uid])
 
   // Load announcements
   useEffect(() => {
@@ -235,6 +262,67 @@ export default function InternHome() {
           </Card>
         ))}
       </div>
+
+      {/* Assigned Projects */}
+      {assignedTasks.length > 0 && (
+        <Card className="border-primary/20 bg-primary/3">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Assigned to You</CardTitle>
+              <Badge variant="secondary" className="ml-auto">{assignedTasks.length}</Badge>
+            </div>
+            <CardDescription>Projects your trainer assigned directly to you</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {assignedTasks.map((task) => {
+              const outcome = assignedOutcomes[task.id]
+              const status = outcome?.status || "not_started"
+              const isDone = status === "passed" || status === "approved"
+              const isSubmitted = status === "submitted" || status === "reviewed"
+
+              const TypeIcon = task.type === "lab" ? FlaskConical : task.type === "submission" ? Upload : BookOpen
+
+              return (
+                <Button
+                  key={task.id}
+                  variant="ghost"
+                  onClick={() => navigate(`/intern/tasks/${task.id}`)}
+                  className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-accent border border-border transition-colors text-left justify-start h-auto group"
+                >
+                  <div className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+                    isDone ? "bg-green-500/10 text-green-500" :
+                    isSubmitted ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"
+                  )}>
+                    {isDone ? <CheckCircle2 className="h-4 w-4" /> : <TypeIcon className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{task.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <Badge variant="outline" className="text-xs capitalize py-0">{task.type}</Badge>
+                      {task.due_date && (
+                        <span className="text-xs text-muted-foreground">
+                          Due {new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
+                      {status !== "not_started" && (
+                        <span className={cn(
+                          "text-xs capitalize",
+                          isDone ? "text-green-600" : isSubmitted ? "text-amber-600" : "text-muted-foreground"
+                        )}>
+                          {status.replace("_", " ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </Button>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Current tasks */}

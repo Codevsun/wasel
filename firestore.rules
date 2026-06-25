@@ -129,6 +129,13 @@ service cloud.firestore {
       allow write: if isTrainer();
     }
 
+    // ── task_templates ────────────────────────────────────────────
+    // write: trainer only | read: trainer only
+    match /task_templates/{templateId} {
+      allow read:  if isTrainer();
+      allow write: if isTrainer();
+    }
+
     // ── config ────────────────────────────────────────────────────
     // write: trainer only | read: all signed-in (interns need track/label options)
     match /config/{docId} {
