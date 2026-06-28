@@ -61,8 +61,6 @@ const statusVariant = {
   submitted: "warning",
 }
 
-const EXPECTED_PCT = 40
-
 export default function InternDetail() {
   const { uid } = useParams()
   const navigate = useNavigate()
@@ -447,7 +445,6 @@ export default function InternDetail() {
   }
 
   const filteredGroupsForCohort = allGroups.filter((g) => g.cohort_id === newCohort)
-  const isAtRisk = progress && typeof progress.overall_pct === "number" && progress.overall_pct < EXPECTED_PCT - 10
 
   if (loading) {
     return (
@@ -491,12 +488,6 @@ export default function InternDetail() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold tracking-tight">{intern.name}</h1>
-                {isAtRisk && (
-                  <Badge variant="destructive" className="gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    At Risk
-                  </Badge>
-                )}
                 <Badge
                   variant={
                     intern.status === "active" ? "success" :

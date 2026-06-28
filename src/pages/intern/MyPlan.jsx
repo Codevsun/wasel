@@ -6,6 +6,7 @@ import {
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
 import { syncProgressWithCohort } from "../../lib/progress"
+import { getActivePlanId, normalizePlanAssignments } from "../../lib/planAssignments"
 import { Card, CardContent } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
@@ -118,7 +119,7 @@ export default function MyPlan() {
         if (!cohortSnap.exists()) throw new Error("Cohort not found.")
         const cohortData = { id: cohortSnap.id, ...cohortSnap.data() }
         setCohort(cohortData)
-        const planId = cohortData.plan_id
+        const planId = getActivePlanId(normalizePlanAssignments(cohortData))
         if (!planId) throw new Error("No plan assigned to cohort.")
 
         const planSnap = await getDoc(doc(db, "plans", planId))

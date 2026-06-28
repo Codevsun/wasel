@@ -4,13 +4,12 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
 import { Progress } from "../../components/ui/progress"
 import { Separator } from "../../components/ui/separator"
 import { Avatar, AvatarFallback } from "../../components/ui/avatar"
 import { cn } from "../../lib/utils"
 import {
-  Users, Layers, TrendingUp, Award, AlertTriangle, Activity,
+  Users, Layers, TrendingUp, Award, Activity,
   BookOpen, BarChart2, Clock,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
@@ -96,7 +95,6 @@ export default function ManagementOverview() {
   const [activeCohorts, setActiveCohorts] = useState(0)
   const [avgCompletion, setAvgCompletion] = useState(0)
   const [certsIssued, setCertsIssued] = useState(0)
-  const [atRiskCount, setAtRiskCount] = useState(0)
   const [trackDist, setTrackDist] = useState([]) // [{category, count}]
   const [recentActivity, setRecentActivity] = useState([])
 
@@ -116,7 +114,6 @@ export default function ManagementOverview() {
         // Progress data for interns
         let totalPct = 0
         let certs = 0
-        let atRisk = 0
         const progressData = []
         for (const intern of interns) {
           try {
@@ -126,8 +123,6 @@ export default function ManagementOverview() {
               totalPct += pct
               progressData.push(pct)
               if (pct >= 100) certs++
-              // at-risk: overall_pct < 30 and not new (has some data)
-              if (pct < 30 && pct > 0) atRisk++
             }
           } catch {
             // skip
@@ -136,7 +131,6 @@ export default function ManagementOverview() {
         const avg = interns.length > 0 ? totalPct / interns.length : 0
         setAvgCompletion(Math.round(avg))
         setCertsIssued(certs)
-        setAtRiskCount(atRisk)
 
         // Track distribution — count interns per track category
         const tracksSnap = await getDocs(collection(db, "tracks"))
@@ -252,27 +246,6 @@ export default function ManagementOverview() {
           color="bg-yellow-500/10 text-yellow-500"
         />
       </div>
-
-      {/* At-risk alert */}
-      {!loading && atRiskCount > 0 && (
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="rounded-lg p-2 bg-yellow-500/10 shrink-0">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">
-                {atRiskCount} intern{atRiskCount !== 1 ? "s" : ""} may be at risk
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {atRiskCount === 1 ? "This intern has" : "These interns have"} made progress but fallen below 30% completion.
-                Consider reaching out.
-              </p>
-            </div>
-            <Badge variant="warning" className="ml-auto shrink-0">At Risk</Badge>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Track distribution */}

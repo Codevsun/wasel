@@ -5,9 +5,13 @@ import {
 } from "firebase/firestore"
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
-import { loadPlanStructure } from "../../lib/progress"
+import { loadPlanStructure, syncProgressWithCohort } from "../../lib/progress"
+import {
+  getActivePlanId, normalizePlanAssignments, planAssignmentsLabel, toPlanFirestoreFields,
+} from "../../lib/planAssignments"
 import { draftPlacementsFromCohort, lastScheduledWeek, placementsToModuleSchedule } from "../../lib/cohortSchedule"
 import PlanScheduleCalendar from "../../components/trainer/PlanScheduleCalendar"
+import PlanAssignmentsEditor from "../../components/trainer/PlanAssignmentsEditor"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
@@ -179,7 +183,7 @@ export default function CohortBuilder() {
 
   // create
   const [createOpen, setCreateOpen] = useState(false)
-  const [form, setForm]             = useState({ name: "", type: "solo", plan_id: "", start_date: "", member_uids: [] })
+  const [form, setForm]             = useState({ name: "", type: "solo", plan_assignments: [], start_date: "", member_uids: [] })
   const [creating, setCreating]     = useState(false)
 
   // delete cohort
@@ -195,7 +199,7 @@ export default function CohortBuilder() {
 
   // groups
   const [newGroupOpen, setNewGroupOpen]   = useState(false)
-  const [newGroupForm, setNewGroupForm]   = useState({ name: "", plan_id: "", member_uids: [] })
+  const [newGroupForm, setNewGroupForm]   = useState({ name: "", plan_assignments: [], member_uids: [] })
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [deleteGroupTarget, setDeleteGroupTarget] = useState(null)
   const [deletingGroup, setDeletingGroup]         = useState(false)
@@ -262,7 +266,7 @@ export default function CohortBuilder() {
     setEditForm({
       name: selected.name || "",
       type: selected.type || "solo",
-      plan_id: selected.plan_id || "",
+      plan_assignments: normalizePlanAssignments(selected),
       start_date: selected.start_date
         ? (selected.start_date?.toDate ? selected.start_date.toDate() : new Date(selected.start_date))
             .toISOString().split("T")[0]
@@ -272,10 +276,11 @@ export default function CohortBuilder() {
 
   // ── mutations ────────────────────────────────────────────────────────────────
   const loadCohortPlan = async (cohort) => {
-    if (!cohort.plan_id || planDataMap[cohort.id]) return
+    const activePlanId = getActivePlanId(normalizePlanAssignments(cohort))
+    if (!activePlanId || planDataMap[cohort.id]) return
     setLoadingPlanFor(cohort.id)
     try {
-      const { tracks, modules } = await loadPlanStructure(cohort.plan_id)
+      const { tracks, modules } = await loadPlanStructure(activePlanId)
       setPlanDataMap((p) => ({ ...p, [cohort.id]: { tracks, modules } }))
       const placements   = draftPlacementsFromCohort(cohort, modules, tracks)
       const scheduledEnd = lastScheduledWeek(placements)
@@ -304,7 +309,7 @@ export default function CohortBuilder() {
 
   const handleSelectCohort = (cohort) => {
     setSelectedId(cohort.id)
-    if (cohort.plan_id) loadCohortPlan(cohort)
+    if (getActivePlanId(normalizePlanAssignments(cohort))) loadCohortPlan(cohort)
     if (cohort.type === "program") loadCohortGroups(cohort)
   }
 
@@ -315,17 +320,23 @@ export default function CohortBuilder() {
       const members = form.type === "solo"
         ? form.member_uids.slice(0, 1)
         : form.type === "program" ? [] : form.member_uids
+      const planFields = form.type !== "program"
+        ? toPlanFirestoreFields(form.plan_assignments)
+        : { plan_assignments: [], plan_id: null }
       const ref = await addDoc(collection(db, "cohorts"), {
         name: form.name.trim(), type: form.type,
-        plan_id: form.type !== "program" ? (form.plan_id || null) : null,
+        ...planFields,
         start_date: form.start_date ? new Date(form.start_date) : null,
         member_uids: members, group_ids: [],
         created_by: user?.uid, created_at: serverTimestamp(),
       })
       await Promise.all(members.map((uid) => updateDoc(doc(db, "users", uid), { cohort_ids: arrayUnion(ref.id) })))
+      if (planFields.plan_id) {
+        await Promise.all(members.map((uid) => syncProgressWithCohort(uid, ref.id)))
+      }
       setCreateOpen(false)
-      setForm({ name: "", type: "solo", plan_id: "", start_date: "", member_uids: [] })
-      handleSelectCohort({ id: ref.id, type: form.type, plan_id: form.plan_id })
+      setForm({ name: "", type: "solo", plan_assignments: [], start_date: "", member_uids: [] })
+      handleSelectCohort({ id: ref.id, type: form.type, ...planFields })
     } catch (err) { console.error(err) }
     finally { setCreating(false) }
   }
@@ -334,14 +345,17 @@ export default function CohortBuilder() {
     if (!selected || !editForm?.name?.trim()) return
     setSavingEdit(true)
     try {
+      const prevActive = getActivePlanId(normalizePlanAssignments(selected))
+      const planFields = toPlanFirestoreFields(editForm.plan_assignments)
       await updateDoc(doc(db, "cohorts", selected.id), {
         name: editForm.name.trim(), type: editForm.type,
-        plan_id: editForm.plan_id || null,
+        ...planFields,
         start_date: editForm.start_date ? new Date(editForm.start_date) : null,
       })
-      if (editForm.plan_id !== selected.plan_id) {
+      if (planFields.plan_id !== prevActive) {
         const next = { ...planDataMap }; delete next[selected.id]; setPlanDataMap(next)
-        if (editForm.plan_id) loadCohortPlan({ ...selected, plan_id: editForm.plan_id })
+        if (planFields.plan_id) loadCohortPlan({ ...selected, ...planFields })
+        await Promise.all((selected.member_uids || []).map((uid) => syncProgressWithCohort(uid, selected.id)))
       }
     } catch (err) { console.error(err) }
     finally { setSavingEdit(false) }
@@ -374,9 +388,10 @@ export default function CohortBuilder() {
     if (!selected || !newGroupForm.name.trim()) return
     setCreatingGroup(true)
     try {
+      const planFields = toPlanFirestoreFields(newGroupForm.plan_assignments)
       const ref = await addDoc(collection(db, "groups"), {
         name: newGroupForm.name.trim(), cohort_id: selected.id,
-        plan_id: newGroupForm.plan_id || null,
+        ...planFields,
         member_uids: newGroupForm.member_uids,
         created_by: user?.uid,
       })
@@ -385,7 +400,7 @@ export default function CohortBuilder() {
         updateDoc(doc(db, "users", uid), { cohort_ids: arrayUnion(selected.id), group_ids: arrayUnion(ref.id) })
       ))
       setNewGroupOpen(false)
-      setNewGroupForm({ name: "", plan_id: "", member_uids: [] })
+      setNewGroupForm({ name: "", plan_assignments: [], member_uids: [] })
       await refreshGroups(selected.id)
     } catch (err) { console.error(err) }
     finally { setCreatingGroup(false) }
@@ -605,7 +620,7 @@ export default function CohortBuilder() {
                   const Icon       = cMeta.icon
                   const memberUids = cohort.member_uids || []
                   const avg        = cohortAvg(memberUids)
-                  const plan       = planMap[cohort.plan_id]
+                  const planLabel  = planAssignmentsLabel(normalizePlanAssignments(cohort), planMap)
                   return (
                     <button
                       key={cohort.id}
@@ -621,8 +636,8 @@ export default function CohortBuilder() {
                           <Badge variant={cMeta.color} className="text-xs shrink-0">{cMeta.label}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {plan
-                            ? <><BookOpen className="h-3 w-3 inline mr-1" />{plan.name}</>
+                          {planLabel
+                            ? <><BookOpen className="h-3 w-3 inline mr-1" />{planLabel}</>
                             : cohort.type === "program"
                               ? `${(cohort.group_ids || []).length} group${(cohort.group_ids || []).length !== 1 ? "s" : ""}`
                               : "No plan assigned"
@@ -690,11 +705,25 @@ export default function CohortBuilder() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg font-bold truncate">{selected.name}</h2>
                     <Badge variant={meta.color} className="capitalize text-xs">{meta.label}</Badge>
-                    {planMap[selected.plan_id] && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                        <BookOpen className="h-3 w-3" />{planMap[selected.plan_id].name}
-                      </Badge>
-                    )}
+                    {(() => {
+                      const activePlanId = getActivePlanId(normalizePlanAssignments(selected))
+                      const assignments = normalizePlanAssignments(selected)
+                      const completedCount = assignments.filter((a) => a.status === "completed").length
+                      return (
+                        <>
+                          {activePlanId && planMap[activePlanId] && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <BookOpen className="h-3 w-3" />{planMap[activePlanId].name}
+                            </Badge>
+                          )}
+                          {completedCount > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {completedCount} completed
+                            </Badge>
+                          )}
+                        </>
+                      )
+                    })()}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {isBatch
@@ -788,7 +817,7 @@ export default function CohortBuilder() {
                       <p className="text-xs text-muted-foreground">Each group has its own plan and members.</p>
                     </div>
                     <Button size="sm" variant="outline"
-                      onClick={() => { setNewGroupForm({ name: "", plan_id: "", member_uids: [] }); setNewGroupOpen(true) }}
+                      onClick={() => { setNewGroupForm({ name: "", plan_assignments: [], member_uids: [] }); setNewGroupOpen(true) }}
                     >
                       <Plus className="h-3.5 w-3.5" /> New Group
                     </Button>
@@ -801,7 +830,7 @@ export default function CohortBuilder() {
                       <FolderOpen className="h-8 w-8 mb-2 opacity-20" />
                       <p className="text-sm">No groups yet</p>
                       <Button size="sm" className="mt-3"
-                        onClick={() => { setNewGroupForm({ name: "", plan_id: "", member_uids: [] }); setNewGroupOpen(true) }}
+                        onClick={() => { setNewGroupForm({ name: "", plan_assignments: [], member_uids: [] }); setNewGroupOpen(true) }}
                       >
                         <Plus className="h-3.5 w-3.5" /> New Group
                       </Button>
@@ -809,7 +838,7 @@ export default function CohortBuilder() {
                   ) : (
                     <div className="space-y-2">
                       {selectedGroups.map((group) => {
-                        const gPlan = planMap[group.plan_id]
+                        const gPlanLabel = planAssignmentsLabel(normalizePlanAssignments(group), planMap)
                         const gUids = group.member_uids || []
                         const gAvg  = cohortAvg(gUids)
                         const avail = availableForGroup(group)
@@ -825,9 +854,9 @@ export default function CohortBuilder() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-semibold">{group.name}</span>
-                                    {gPlan && (
+                                    {gPlanLabel && (
                                       <Badge variant="outline" className="text-xs gap-1 shrink-0">
-                                        <BookOpen className="h-3 w-3" />{gPlan.name}
+                                        <BookOpen className="h-3 w-3" />{gPlanLabel}
                                       </Badge>
                                     )}
                                   </div>
@@ -874,7 +903,7 @@ export default function CohortBuilder() {
             {!isBatch && (
               <TabsContent value="schedule" className="flex-1 overflow-y-auto m-0">
                 <div className="px-8 py-6">
-                  {!selected.plan_id ? (
+                  {!getActivePlanId(normalizePlanAssignments(selected)) ? (
                     <div className="rounded-xl border border-dashed border-border flex flex-col items-center py-16 text-muted-foreground">
                       <CalendarDays className="h-8 w-8 mb-2 opacity-20" />
                       <p className="text-sm">No plan assigned — go to Settings to add one.</p>
@@ -915,7 +944,7 @@ export default function CohortBuilder() {
 
             {/* Settings tab */}
             <TabsContent value="settings" className="flex-1 overflow-y-auto m-0">
-              <div className="px-8 py-6 max-w-sm">
+              <div className="px-8 py-6 max-w-md">
                 {editForm && (
                   <div className="space-y-5">
                     <h3 className="text-sm font-semibold">Settings</h3>
@@ -932,16 +961,11 @@ export default function CohortBuilder() {
                       <Input type="date" value={editForm.start_date} onChange={(e) => setEditForm((f) => ({ ...f, start_date: e.target.value }))} />
                     </div>
                     {editForm.type !== "program" && (
-                      <div className="space-y-1.5">
-                        <Label>Plan Template</Label>
-                        <Select value={editForm.plan_id || "none"} onValueChange={(v) => setEditForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))}>
-                          <SelectTrigger><SelectValue placeholder="Select a template" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No template</SelectItem>
-                            {templatePlans.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <PlanAssignmentsEditor
+                        assignments={editForm.plan_assignments}
+                        onChange={(plan_assignments) => setEditForm((f) => ({ ...f, plan_assignments }))}
+                        templatePlans={templatePlans}
+                      />
                     )}
                     <Button onClick={handleSaveEdit} disabled={!editForm.name.trim() || savingEdit}>
                       <Save className="h-3.5 w-3.5" />{savingEdit ? "Saving…" : "Save Changes"}
@@ -983,16 +1007,11 @@ export default function CohortBuilder() {
               <Input type="date" value={form.start_date} onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))} />
             </div>
             {form.type !== "program" && (
-              <div className="space-y-1.5">
-                <Label>Plan Template</Label>
-                <Select value={form.plan_id || "none"} onValueChange={(v) => setForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select a template" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No template</SelectItem>
-                    {templatePlans.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+              <PlanAssignmentsEditor
+                assignments={form.plan_assignments}
+                onChange={(plan_assignments) => setForm((f) => ({ ...f, plan_assignments }))}
+                templatePlans={templatePlans}
+              />
             )}
           </div>
           <DialogFooter>
@@ -1031,18 +1050,11 @@ export default function CohortBuilder() {
                 onChange={(e) => setNewGroupForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Plan Template</Label>
-              <Select value={newGroupForm.plan_id || "none"}
-                onValueChange={(v) => setNewGroupForm((f) => ({ ...f, plan_id: v === "none" ? "" : v }))}
-              >
-                <SelectTrigger><SelectValue placeholder="Select a template" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No template</SelectItem>
-                  {templatePlans.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <PlanAssignmentsEditor
+              assignments={newGroupForm.plan_assignments}
+              onChange={(plan_assignments) => setNewGroupForm((f) => ({ ...f, plan_assignments }))}
+              templatePlans={templatePlans}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewGroupOpen(false)}>Cancel</Button>

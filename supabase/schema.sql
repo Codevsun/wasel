@@ -125,7 +125,8 @@ create table if not exists public.cohorts (
   id              text primary key default gen_random_uuid()::text,
   name            text,
   type            text,                               -- solo | group | program
-  plan_id         text,
+  plan_id         text,                               -- active plan (synced from plan_assignments)
+  plan_assignments jsonb default '[]'::jsonb,          -- [{ plan_id, status: active|pending|completed }]
   start_date      timestamptz,
   duration_weeks  integer,
   member_uids     jsonb default '[]'::jsonb,
@@ -140,6 +141,7 @@ create table if not exists public.groups (
   name        text,
   cohort_id   text,
   plan_id     text,
+  plan_assignments jsonb default '[]'::jsonb,
   member_uids jsonb default '[]'::jsonb,
   created_by  text,
   created_at  timestamptz default now()
@@ -210,7 +212,7 @@ create table if not exists public.announcements (
   id         text primary key default gen_random_uuid()::text,
   title      text,
   body       text,
-  target     jsonb,                                   -- { type, id } resolved target
+  target     text,                                   -- "all" | cohort id | group id
   created_by text,
   created_at timestamptz default now()
 );
@@ -285,6 +287,7 @@ create index if not exists idx_users_role          on public.users (role);
 create index if not exists idx_progress_tasks_user on public.progress_tasks (user_id);
 create index if not exists idx_progress_ms_user    on public.progress_milestones (user_id);
 create index if not exists idx_progress_tr_user    on public.progress_tracks (user_id);
+create index if not exists idx_announcements_target_created on public.announcements (target, created_at DESC);
 
 -- ======================================================================
 -- Row-Level Security

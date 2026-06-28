@@ -20,15 +20,13 @@ import {
 import { Label } from "../../components/ui/label"
 import { Checkbox } from "../../components/ui/checkbox"
 import {
-  Users, Search, AlertTriangle, ChevronRight, UserCheck, Trash2, UserPlus,
+  Users, Search, ChevronRight, UserCheck, Trash2, UserPlus,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
 import CreateAccount from "./CreateAccount"
 
 const TRACK_OPTIONS = ["frontend", "backend", "fullstack", "devops", "git", "ai", "cloud", "security"]
 const STATUS_OPTIONS = ["active", "inactive", "graduated", "withdrawn"]
-
-const EXPECTED_PCT = 40 // simplistic fallback
 
 function getInitials(name) {
   if (!name) return "?"
@@ -179,14 +177,7 @@ export default function InternQueue() {
     }
   }
 
-  const isAtRisk = (intern) => {
-    if (intern.status !== "active") return false
-    if (!(intern.cohort_ids || []).length) return false
-    const p = progressMap[intern.id]
-    return p && typeof p.overall_pct === "number" && p.overall_pct < EXPECTED_PCT - 10
-  }
-
-  const statusColor = {
+const statusColor = {
     active: "success",
     inactive: "secondary",
     graduated: "default",
@@ -329,7 +320,6 @@ export default function InternQueue() {
               {filtered.map((intern) => {
                 const prog = progressMap[intern.id]
                 const pct = prog?.overall_pct ?? null
-                const risk = isAtRisk(intern)
                 const cohortNames = (intern.cohort_ids || [])
                   .map((cid) => cohortMap[cid]?.name)
                   .filter(Boolean)
@@ -363,12 +353,6 @@ export default function InternQueue() {
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium">{intern.name}</span>
-                        {risk && (
-                          <Badge variant="destructive" className="text-xs gap-1 py-0">
-                            <AlertTriangle className="h-3 w-3" />
-                            At risk
-                          </Badge>
-                        )}
                         <Badge variant={statusColor[intern.status] || "outline"} className="text-xs py-0 capitalize">
                           {intern.status || "unknown"}
                         </Badge>

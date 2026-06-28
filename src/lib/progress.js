@@ -3,6 +3,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore"
 import { db } from "../firebase/config"
+import { getActivePlanId, normalizePlanAssignments } from "./planAssignments"
 
 export async function loadPlanStructure(planId) {
   const tracksSnap = await getDocs(
@@ -179,7 +180,8 @@ export async function syncProgressWithCohort(uid, cohortId) {
 
   const cohortSnap = await getDoc(doc(db, "cohorts", cohortId))
   if (!cohortSnap.exists()) return null
-  const planId = cohortSnap.data().plan_id
+  const cohortData = cohortSnap.data()
+  const planId = getActivePlanId(normalizePlanAssignments(cohortData))
   if (!planId) return null
 
   const progRef = doc(db, "progress", uid)
@@ -276,7 +278,7 @@ export async function markTaskCompleted(uid, taskId, { cohortId } = {}) {
     progSnap = await getDoc(progRef)
   } else if (cohortId) {
     const cohortSnap = await getDoc(doc(db, "cohorts", cohortId))
-    const planId = cohortSnap.data()?.plan_id
+    const planId = getActivePlanId(normalizePlanAssignments(cohortSnap.data() || {}))
     const progPlanId = progSnap.data()?.plan_id
     if (planId && progPlanId !== planId) {
       await syncProgressWithCohort(uid, cohortId)

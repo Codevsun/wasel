@@ -118,7 +118,6 @@ export default function TrainerAttendance() {
             user_id: uid,
             date: selectedDate,
             marked_by: user.uid,
-            updated_at: serverTimestamp(),
             created_at: existing.created_at || serverTimestamp(),
           }, { merge: true })
         })

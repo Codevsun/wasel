@@ -6,6 +6,7 @@ import {
 import { db } from "../../firebase/config"
 import { useAuth } from "../../contexts/AuthContext"
 import { syncProgressWithCohort, loadTrackLabels } from "../../lib/progress"
+import { subscribeAnnouncementsForUser } from "../../lib/announcements"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/card"
 import { Progress } from "../../components/ui/progress"
 import { Badge } from "../../components/ui/badge"
@@ -160,32 +161,22 @@ export default function InternHome() {
     return unsub
   }, [user?.uid])
 
-  // Load announcements
+  // Load announcements (client-side audience filter — target column is jsonb in Postgres)
   useEffect(() => {
     if (!userDoc) return
-
-    async function loadAnnouncements() {
-      setAnnouncementsLoading(true)
-      try {
-        const targets = ["all"]
-        if (userDoc.cohort_ids?.[0]) targets.push(userDoc.cohort_ids[0])
-        if (userDoc.group_ids?.[0]) targets.push(userDoc.group_ids[0])
-
-        const q = query(
-          collection(db, "announcements"),
-          where("target", "in", targets),
-          orderBy("created_at", "desc"),
-          limit(5)
-        )
-        const snap = await getDocs(q)
-        setAnnouncements(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      } catch (err) {
+    setAnnouncementsLoading(true)
+    const unsub = subscribeAnnouncementsForUser(
+      userDoc,
+      (items) => {
+        setAnnouncements(items)
+        setAnnouncementsLoading(false)
+      },
+      (err) => {
         console.error("Error loading announcements:", err)
+        setAnnouncementsLoading(false)
       }
-      setAnnouncementsLoading(false)
-    }
-
-    loadAnnouncements()
+    )
+    return unsub
   }, [userDoc])
 
   const overallPct = progressDoc?.overall_pct ?? 0

@@ -17,6 +17,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from "../../components/ui/dialog"
+import { normalizeAnnouncementTarget } from "../../lib/announcements"
 import {
   Bell, Plus, Trash2, Users, Layers, Globe, AlertTriangle,
   CalendarDays,
@@ -29,28 +30,29 @@ function formatDate(ts) {
 }
 
 function TargetBadge({ target, cohortMap, groupMap }) {
-  if (target === "all") {
+  const resolved = normalizeAnnouncementTarget(target)
+  if (resolved === "all") {
     return (
       <Badge variant="default" className="gap-1 text-xs">
         <Globe className="h-3 w-3" /> Everyone
       </Badge>
     )
   }
-  if (cohortMap[target]) {
+  if (cohortMap[resolved]) {
     return (
       <Badge variant="secondary" className="gap-1 text-xs">
-        <Layers className="h-3 w-3" /> {cohortMap[target].name}
+        <Layers className="h-3 w-3" /> {cohortMap[resolved].name}
       </Badge>
     )
   }
-  if (groupMap[target]) {
+  if (groupMap[resolved]) {
     return (
       <Badge variant="outline" className="gap-1 text-xs">
-        <Users className="h-3 w-3" /> {groupMap[target].name}
+        <Users className="h-3 w-3" /> {groupMap[resolved].name}
       </Badge>
     )
   }
-  return <Badge variant="outline" className="text-xs">{target}</Badge>
+  return <Badge variant="outline" className="text-xs">{resolved}</Badge>
 }
 
 export default function Announcements() {

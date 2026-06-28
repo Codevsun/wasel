@@ -10,9 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Avatar, AvatarFallback } from "../../components/ui/avatar"
-import { Progress } from "../../components/ui/progress"
 import {
-  Users, Layers, ClipboardList, AlertTriangle, UserPlus,
+  Users, Layers, ClipboardList, UserPlus,
   BookOpen, ChevronRight, Clock, CheckCircle2,
 } from "lucide-react"
 import { cn } from "../../lib/utils"
@@ -67,10 +66,7 @@ export default function TrainerDashboard() {
   const [interns, setInterns] = useState([])
   const [cohorts, setCohorts] = useState([])
   const [pendingSubmissions, setPendingSubmissions] = useState([])
-  const [progressDocs, setProgressDocs] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
-
-  const weeksActive = 4
 
   useEffect(() => {
     const unsubs = []
@@ -101,12 +97,6 @@ export default function TrainerDashboard() {
       }, console.error)
     )
 
-    unsubs.push(
-      onSnapshot(collection(db, "progress"), (snap) => {
-        setProgressDocs(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      }, console.error)
-    )
-
     const actQ = query(
       collection(db, "submissions"),
       orderBy("submitted_at", "desc"),
@@ -120,11 +110,6 @@ export default function TrainerDashboard() {
 
     return () => unsubs.forEach((u) => u())
   }, [])
-
-  const expectedPct = Math.min(weeksActive * 10, 100)
-  const atRisk = progressDocs.filter(
-    (p) => typeof p.overall_pct === "number" && p.overall_pct < expectedPct - 10
-  )
 
   const internMap = Object.fromEntries(interns.map((i) => [i.id, i]))
   const activeCohorts = cohorts.filter((c) => c.status !== "archived")
@@ -157,7 +142,7 @@ export default function TrainerDashboard() {
 
       <div className="p-6 space-y-6">
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <StatCard
             title="Total Interns"
             value={interns.length}
@@ -180,14 +165,6 @@ export default function TrainerDashboard() {
             icon={ClipboardList}
             accent="amber"
             description="Submissions awaiting feedback"
-            loading={loading}
-          />
-          <StatCard
-            title="At-Risk Interns"
-            value={atRisk.length}
-            icon={AlertTriangle}
-            accent="red"
-            description={`Progress below expected (${expectedPct}%)`}
             loading={loading}
           />
         </div>
@@ -322,60 +299,6 @@ export default function TrainerDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* At-Risk Interns */}
-        {atRisk.length > 0 && (
-          <Card className="border-red-200 dark:border-red-900/50">
-            <CardHeader className="flex flex-row items-center gap-3 pb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 dark:bg-red-950/30">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <CardTitle className="text-base text-red-600 dark:text-red-400">
-                  At-Risk Interns
-                </CardTitle>
-                <CardDescription>
-                  Progress significantly below expected {expectedPct}%
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {atRisk.slice(0, 8).map((p) => {
-                  const intern = internMap[p.id]
-                  if (!intern) return null
-                  return (
-                    <Button
-                      key={p.id}
-                      variant="ghost"
-                      className="w-full flex items-center gap-3 h-auto p-2.5 justify-start text-left rounded-lg"
-                      onClick={() => navigate(`/trainer/interns/${p.id}`)}
-                    >
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback className="text-xs bg-red-100 text-red-600 dark:bg-red-900/40 font-semibold">
-                          {intern.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium truncate">{intern.name}</p>
-                          <span className="text-xs text-red-500 font-semibold ml-2 shrink-0">
-                            {Math.round(p.overall_pct ?? 0)}%
-                          </span>
-                        </div>
-                        <Progress
-                          value={p.overall_pct ?? 0}
-                          className="h-1.5 [&>div]:bg-red-500"
-                        />
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </Button>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )
