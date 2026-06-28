@@ -51,83 +51,104 @@ export default function Login() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden bg-gradient-to-br from-violet-50 via-background to-indigo-50/60 dark:from-violet-950/20 dark:via-background dark:to-indigo-950/20">
-      {/* Decorative blobs */}
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-violet-200/30 blur-3xl dark:bg-violet-900/20" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl dark:bg-indigo-900/20" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      {/* Grid background */}
+      <div className="pointer-events-none absolute inset-0 bg-background" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.15]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+        }}
+      />
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[420px] w-[720px] rounded-full bg-primary/[0.07] blur-[100px]" />
 
-      {/* Theme toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 rounded-xl p-2.5 text-muted-foreground hover:text-foreground hover:bg-white/60 dark:hover:bg-white/10 backdrop-blur-sm border border-border/50 transition-all"
+      <button
+        type="button"
         onClick={toggleTheme}
+        aria-label="Toggle theme"
+        className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </Button>
+      </button>
 
-      <div className="relative w-full max-w-sm">
-        {/* Card */}
-        <div className="rounded-2xl border border-border/60 bg-card/90 backdrop-blur-md shadow-xl shadow-violet-100/50 dark:shadow-violet-950/30 p-8">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
-            <Logo className="h-14 w-14 mb-4" />
-            <p className="text-muted-foreground text-sm">Internship Portal</p>
-          </div>
+      <div className="relative w-full max-w-[380px]">
+        {/* Header */}
+        <div className="mb-10 text-center">
+          <Logo className="mx-auto mb-6 h-28 w-28" />
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+            Welcome back
+          </h1>
+          <p className="mt-1.5 text-[15px] text-muted-foreground">
+            Sign in to Wasel
+          </p>
+        </div>
 
+        {/* Form shell */}
+        <div className="rounded-[28px] border border-border/70 bg-card/80 p-7 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)] backdrop-blur-sm dark:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)]">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-[13px] text-muted-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="h-11 rounded-xl bg-background/60"
+                className="h-11 border-border/70 bg-background shadow-none focus-visible:ring-1 focus-visible:ring-primary/40"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-[13px] text-muted-foreground">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="h-11 rounded-xl bg-background/60"
+                className="h-11 border-border/70 bg-background shadow-none focus-visible:ring-1 focus-visible:ring-primary/40"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-destructive/8 border border-destructive/20 px-3 py-2.5 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full h-11 rounded-xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 border-0 shadow-md shadow-violet-200 dark:shadow-violet-900/40 transition-all"
+              className="h-11 w-full text-[15px] font-medium"
               disabled={submitting}
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                   Signing in…
                 </span>
-              ) : "Sign in"}
+              ) : (
+                "Continue"
+              )}
             </Button>
           </form>
-
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            No self-signup — contact your trainer to get an account.
-          </p>
         </div>
+
+        <p className="mt-8 text-center text-[13px] leading-relaxed text-muted-foreground">
+          No self-signup — contact your trainer for access.
+        </p>
       </div>
     </div>
   )
