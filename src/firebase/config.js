@@ -1,23 +1,19 @@
-import { initializeApp } from "firebase/app"
-import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
-import { getStorage } from "firebase/storage"
-import { getFunctions } from "firebase/functions"
-import { getAnalytics } from "firebase/analytics"
+// Compatibility shim. The app has migrated to Supabase; this module keeps the
+// historical `../firebase/config` import path working by re-exporting the
+// Supabase-backed compatibility objects. New code should import from
+// `src/supabase/*` directly.
 
-export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-}
+import { db } from "../supabase/compat/firestore"
+import { auth } from "../supabase/compat/auth"
+import { functions } from "../supabase/compat/functions"
+import { storage } from "../supabase/compat/storage"
+import { analytics } from "../supabase/compat/analytics"
+import { supabase } from "../supabase/client"
 
-export const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
-export const functions = getFunctions(app)
-export const analytics = getAnalytics(app)
+export const app = { __isSupabaseApp: true }
+
+// Kept for any code that referenced firebaseConfig (e.g. legacy secondary-app
+// patterns). No longer used to initialize anything.
+export const firebaseConfig = {}
+
+export { db, auth, functions, storage, analytics, supabase }

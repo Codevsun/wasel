@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react"
-import { initializeApp, deleteApp } from "firebase/app"
-import {
-  collection, getDocs, doc, setDoc, updateDoc, arrayUnion, query, where,
-} from "firebase/firestore"
-import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth"
+import { collection, getDocs, query, where } from "firebase/firestore"
 import { httpsCallable } from "firebase/functions"
-import { db, functions, firebaseConfig } from "../../firebase/config"
+import { db, functions } from "../../firebase/config"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
@@ -96,46 +92,28 @@ export default function CreateAccount({ open, onOpenChange }) {
       return
     }
     setLoading(true)
-    let secondaryApp = null
     try {
-      secondaryApp = initializeApp(firebaseConfig, `create-user-${Date.now()}`)
-      const secondaryAuth = getAuth(secondaryApp)
-      const cred = await createUserWithEmailAndPassword(secondaryAuth, form.email.trim(), form.password)
-      const uid = cred.user.uid
-      await signOut(secondaryAuth)
-
-      await setDoc(doc(db, "users", uid), {
+      // Account creation happens server-side in a Supabase Edge Function so the
+      // trainer's own session is never replaced. The function creates the auth
+      // user, assigns the role, writes the users row and updates memberships.
+      const createUserAccount = httpsCallable(functions, "createUserAccount")
+      await createUserAccount({
         name: form.name.trim(),
         email: form.email.trim(),
+        password: form.password,
         role: form.role,
         track_preference: form.track_preference,
-        cohort_ids: form.cohort_id ? [form.cohort_id] : [],
-        group_ids: form.group_id ? [form.group_id] : [],
+        cohort_id: form.cohort_id || null,
+        group_id: form.group_id || null,
         note: form.note.trim(),
-        status: "active",
-        created_at: new Date(),
-        last_active: null,
       })
 
-      if (form.cohort_id) {
-        await updateDoc(doc(db, "cohorts", form.cohort_id), { member_uids: arrayUnion(uid) })
-      }
-      if (form.group_id) {
-        await updateDoc(doc(db, "groups", form.group_id), { member_uids: arrayUnion(uid) })
-      }
-
-      try {
-        const setUserRole = httpsCallable(functions, "setUserRole")
-        await setUserRole({ uid, role: form.role })
-      } catch {}
-
-      setSuccess({ uid, name: form.name.trim(), email: form.email.trim(), password: form.password })
+      setSuccess({ name: form.name.trim(), email: form.email.trim(), password: form.password })
       setForm({ ...EMPTY_FORM, password: generateTempPassword() })
     } catch (err) {
       console.error(err)
       setError(err.message || "Failed to create account.")
     } finally {
-      if (secondaryApp) await deleteApp(secondaryApp).catch(() => {})
       setLoading(false)
     }
   }
