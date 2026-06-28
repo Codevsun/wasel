@@ -320,6 +320,7 @@ const statusColor = {
               {filtered.map((intern) => {
                 const prog = progressMap[intern.id]
                 const pct = prog?.overall_pct ?? null
+                const risk = pct !== null && pct < 30
                 const cohortNames = (intern.cohort_ids || [])
                   .map((cid) => cohortMap[cid]?.name)
                   .filter(Boolean)
